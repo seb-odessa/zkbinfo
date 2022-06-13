@@ -1,6 +1,7 @@
 use env_logger;
 use log::{error, info};
 use websockets::{Frame, WebSocket, WebSocketError};
+use tokio::time::{sleep, Duration};
 
 use lib::Killmail;
 
@@ -36,7 +37,12 @@ async fn main() -> anyhow::Result<()> {
                         match serde_json::from_str::<Killmail>(&json) {
                             Ok(killmail) => {
                                 info!("killmail_id: {}", killmail.killmail_id);
-                                client.post(api).json(&killmail).send().await?;
+                                let res = client.post(api).json(&killmail).send().await;
+                                if res.is_err() {
+                                    sleep(Duration::from_secs(10)).await;
+                                    client.post(api).json(&killmail).send().await?;
+                                }
+
                             },
                             Err(what) => {
                                 error!(": {what}");
