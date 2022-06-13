@@ -9,11 +9,7 @@ path = "src/lib/lib.rs"
 
 [[bin]]
 name = "zkbinfo"
-path = "src/main.rs"
-
-[[bin]]
-name = "database_gw"
-path = "src/database_gw.rs"
+path = "src/zkbinfo.rs"
 
 [[bin]]
 name = "websocket_client"
