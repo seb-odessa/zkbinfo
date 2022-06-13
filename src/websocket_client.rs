@@ -33,9 +33,15 @@ async fn main() -> anyhow::Result<()> {
                     if  !continuation || fin {
                         let json = parts.join("");
                         parts.clear();
-                        let killmail = serde_json::from_str::<Killmail>(&json)?;
-                        info!("killmail_id: {}", killmail.killmail_id);
-                        client.post(api).json(&killmail).send().await?;
+                        match serde_json::from_str::<Killmail>(&json) {
+                            Ok(killmail) => {
+                                info!("killmail_id: {}", killmail.killmail_id);
+                                client.post(api).json(&killmail).send().await?;
+                            },
+                            Err(what) => {
+                                error!(": {what}");
+                            }
+                        }
                     }
                 }
             }
