@@ -112,10 +112,10 @@ pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result
 #[derive(Debug)]
 pub struct RawHistory {
     pub killmail_id: i32,
-    pub character_id: i32,
-    pub corporation_id: i32,
-    pub alliance_id: i32,
-    pub ship_type_id: i32,
+    pub character_id: Option<i32>,
+    pub corporation_id: Option<i32>,
+    pub alliance_id: Option<i32>,
+    pub ship_type_id: Option<i32>,
     pub damage: i32,
     pub is_victim: bool,
     pub solar_system_id: i32,
