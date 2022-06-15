@@ -8,7 +8,6 @@ use std::env;
 
 use lib::api;
 use lib::database;
-use lib::killmail;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
                     .route("/killmail/saved/{date}/", web::get().to(api::saved_ids))
                     .route("/character/report/{id}/", web::get().to(api::character_report)),
             )
-            .service(web::scope("/killmail").route("/save", web::post().to(killmail::save)))
+            .service(web::scope("/killmail").route("/save", web::post().to(api::save)))
             .wrap(Logger::default())
     })
     .workers(3)
