@@ -5,7 +5,6 @@ use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection /*, Transaction*/};
 
-use crate::api::Relations;
 use crate::killmail::Key;
 use crate::killmail::Killmail;
 
@@ -175,11 +174,13 @@ impl RelationType {
     }
 }
 
+pub type RawRelation = (i32, usize);
+
 pub fn character_relations(
     conn: &Connection,
     id: i32,
     rel: RelationType,
-) -> anyhow::Result<Vec<Relations>> {
+) -> anyhow::Result<Vec<RawRelation>> {
     let field = RelationType::get_field(&rel);
     let victum_value = RelationType::get_victim_value(&rel);
     let sql = format!(
@@ -194,10 +195,7 @@ pub fn character_relations(
         ORDER BY 2 DESC;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| {
-        Ok(Relations {
-            id: row.get(0)?,
-            count: row.get(1)?,
-        })
+        Ok((row.get(0)?, row.get(1)?))
     })?;
     Ok(iter.map(|res| res.unwrap()).collect())
 }
