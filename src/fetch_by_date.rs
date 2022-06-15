@@ -58,18 +58,25 @@ async fn main() -> anyhow::Result<()> {
                     "https://esi.evetech.net/latest/killmails/{id}/{hash}/?datasource=tranquility"
                 );
                 info!("EVETECH API: {evetech_api}");
-                let killmail = reqwest::get(&evetech_api)
-                    .await?
-                    .json::<killmail::Killmail>()
-                    .await?;
 
                 let mut timeout = 10;
-                while let Err(what) = client.post(&zkbinfo_save_api).json(&killmail).send().await {
-                    error!("{what}");
-                    warn!("Will wait for {timeout} seconds");
-                    tokio::time::sleep(Duration::from_secs(timeout)).await;
-                    if timeout < 300 {
-                        timeout += 30;
+                loop {
+                    let response = reqwest::get(&evetech_api).await?;
+                    if let Ok(killmail) = response.json::<killmail::Killmail>().await {
+                        while let Err(what) =
+                            client.post(&zkbinfo_save_api).json(&killmail).send().await
+                        {
+                            error!("{what}");
+                            tokio::time::sleep(Duration::from_secs(timeout)).await;
+                            warn!("Will wait zkbinfo for {timeout} seconds");
+                        }
+                        break;
+                    } else {
+                        if timeout < 300 {
+                            timeout += 30;
+                        }
+                        tokio::time::sleep(Duration::from_secs(timeout)).await;
+                        warn!("Will wait evetech for {timeout} seconds");
                     }
                 }
             }

@@ -98,3 +98,37 @@ pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result
     }
     Ok(ids)
 }
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct RawHistory {
+    pub killmail_id: i32,
+    pub character_id: i32,
+    pub corporation_id: i32,
+    pub alliance_id: i32,
+    pub ship_type_id: i32,
+    pub damage: i32,
+    pub is_victim: bool,
+}
+
+pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHistory>> {
+    let sql = format!(
+            "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
+             FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
+             WHERE character_id = :id AND killmail_time and killmail_time > date('now','-2 month');"
+        );
+
+    let mut stmt = conn.prepare(&sql)?;
+    let iter = stmt.query_map(&[(":id", &id)], |row| {
+        Ok(RawHistory {
+            killmail_id: row.get(0)?,
+            character_id: row.get(1)?,
+            corporation_id: row.get(2)?,
+            alliance_id: row.get(3)?,
+            ship_type_id: row.get(4)?,
+            damage: row.get(5)?,
+            is_victim: row.get(6)?,
+        })
+    })?;
+    return Ok(iter.map(|res| res.unwrap()).collect());
+}
