@@ -4,6 +4,7 @@ use log::{error, warn};
 use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::Mutex;
+use std::collections::BTreeMap;
 
 use crate::database;
 use crate::killmail;
@@ -72,7 +73,7 @@ impl Status {
         }
     }
     pub fn json<T: Into<String>>(message: T) -> String {
-        format!(r#"{{ "message": {} }}"#, message.into())
+        format!(r#"{{ "message": "{}" }}"#, message.into())
     }
 }
 impl Responder for Status {
@@ -130,22 +131,74 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
 /******************************************************************************/
 
 #[derive(Serialize, Clone, Default)]
+pub struct Wins {
+    killmails: Vec<i32>,
+    total_damage: i32,
+    ships: BTreeMap<i32, usize>,
+}
+
+#[derive(Serialize, Clone, Default)]
+pub struct Losses {
+    killmails: Vec<i32>,
+    total_damage: i32,
+    ships: BTreeMap<i32, usize>,
+}
+
+#[derive(Serialize, Clone, Default)]
 pub struct CharacterReport {
     id: i32,
+    wins: Wins,
+    losses: Losses,
+}
+impl CharacterReport {
+    pub fn from(id: i32, rows: Vec<database::RawHistory>) -> Self {
+        let mut report = CharacterReport::default();
+        report.id = id;
+        report.wins.killmails.reserve(rows.len());
+        report.losses.killmails.reserve(rows.len());
+        for row in rows {
+            if row.is_victim {
+                report.losses.killmails.push(row.killmail_id);
+                report.losses.total_damage += row.damage;
+                if let Some(count) = report.losses.ships.get_mut(&row.ship_type_id) {
+                    *count += 1;
+                }
+            } else {
+                report.wins.killmails.push(row.killmail_id);
+                report.wins.total_damage += row.damage;
+                if let Some(count) = report.wins.ships.get_mut(&row.ship_type_id) {
+                    *count += 1;
+                }
+            }
+        }
+        return report;
+    }
 }
 
 pub async fn character_report(
-    _ctx: web::Data<AppState>,
+    ctx: web::Data<AppState>,
     character: web::Path<String>,
 ) -> impl Responder {
-    let json;
-    if let Ok(id) = character.parse::<i32>() {
-        let report = CharacterReport { id };
-        json = serde_json::to_string(&report).unwrap();
+    let json = if let Ok(id) = character.parse::<i32>() {
+        match ctx.connection.lock() {
+            Ok(conn) => match database::character_history(&conn, id) {
+                Ok(rows) => {
+                    serde_json::to_string(&CharacterReport::from(id, rows)).unwrap()
+                }
+                Err(what) => {
+                    error!("Failed to select ids from DB: {what}");
+                    Status::json(format!("{what}"))
+                }
+            },
+            Err(what) => {
+                error!("Failed to lock connection: {what}");
+                Status::json(format!("{what}"))
+            }
+        }
     } else {
         warn!("Can't parse '{character}' to i32");
-        json = Status::json(format!("Can't parse '{character}' to i32"))
-    }
+        Status::json(format!("Can't parse '{character}' to i32"))
+    };
 
     HttpResponse::Ok()
         .content_type(ContentType::json())
