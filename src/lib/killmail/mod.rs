@@ -18,18 +18,12 @@ pub async fn save(ctx: web::Data<api::AppState>, json: String) -> impl Responder
     match serde_json::from_str::<Killmail>(&json) {
         Ok(killmail) => {
             let id = killmail.killmail_id;
-            match ctx.connection.lock() {
-                Ok(conn) => match database::insert(&conn, killmail) {
-                    Ok(_) => {
-                        info!("killmail {} saved in the database", id);
-                        ctx.note_killmail_count();
-                        api::Status::ok()
-                    }
-                    Err(what) => {
-                        error!("Failed to lock connection: {what}");
-                        api::Status::from(format!("{what}"))
-                    }
-                },
+            match database::insert(&ctx.connection, killmail) {
+                Ok(_) => {
+                    info!("killmail {} saved in the database", id);
+                    ctx.note_killmail_count();
+                    api::Status::ok()
+                }
                 Err(what) => {
                     error!("Failed to lock connection: {what}");
                     api::Status::from(format!("{what}"))
