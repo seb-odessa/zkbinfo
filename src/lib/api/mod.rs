@@ -232,18 +232,27 @@ fn character_report_impl(
     report.friends = database::character_relations(&conn, id, RelationType::Friends)?
         .into_iter()
         .collect();
+
     report.enemies = database::character_relations(&conn, id, RelationType::Enemies)?
         .into_iter()
         .collect();
+
     report.friends_corp = database::character_relations(&conn, id, RelationType::FriendsCorp)?
         .into_iter()
         .collect();
+
     report.enemies_corp = database::character_relations(&conn, id, RelationType::EnemiesCorp)?
         .into_iter()
         .collect();
 
-    // report.friends_alli = database::character_relations(&conn, id, RelationType::FriendsAlli)?;
-    // report.enemies_alli = database::character_relations(&conn, id, RelationType::EnemiesAlli)?;
+    report.friends_alli = database::character_relations(&conn, id, RelationType::FriendsAlli)?
+        .into_iter()
+        .collect();
+
+    report.enemies_alli = database::character_relations(&conn, id, RelationType::EnemiesAlli)?
+        .into_iter()
+        .collect();
+
     Ok(report)
 }
 
