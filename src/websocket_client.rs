@@ -3,7 +3,7 @@ use log::{error, info};
 use websockets::{Frame, WebSocket, WebSocketError};
 use tokio::time::{sleep, Duration};
 
-use lib::Killmail;
+use lib::killmail::Killmail;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

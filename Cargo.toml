@@ -18,6 +18,7 @@ path = "src/websocket_client.rs"
 [dependencies]
 anyhow = "1.0.57"
 actix = "0.13.0"
+chrono = "0.4.19"
 hex = "0.4.3"
 tokio = { version = "1.19.2", features = ["full", "time"] }
 log = "0.4.17"
