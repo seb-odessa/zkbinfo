@@ -22,9 +22,7 @@ pub async fn save(ctx: web::Data<api::AppState>, json: String) -> impl Responder
                 Ok(conn) => match database::insert(&conn, killmail) {
                     Ok(_) => {
                         info!("killmail {} saved in the database", id);
-                        if let Some(mut stat) = ctx.stat.lock().ok() {
-                            stat.increase_killmail_count();
-                        }
+                        ctx.note_killmail_count();
                         api::Status::ok()
                     }
                     Err(what) => {
