@@ -1,12 +1,12 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use chrono::NaiveDate;
+use log::{error, warn};
 use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::Mutex;
-use chrono::NaiveDate;
-use log::{error,warn};
 
-use crate::killmail;
 use crate::database;
+use crate::killmail;
 
 pub struct AppState {
     pub stat: Mutex<Stat>,
@@ -18,6 +18,40 @@ impl AppState {
             stat: Mutex::new(Stat::default()),
             connection: Mutex::new(connection),
         }
+    }
+
+    pub fn note_killmail_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.saved_killmails_count += 1;
+        }
+    }
+
+    pub fn note_stat_access_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.stat_access_count += 1;
+        }
+    }
+
+    pub fn note_select_ids_by_date_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.select_ids_by_date_count += 1;
+        }
+    }
+}
+
+#[derive(Serialize, Clone, Default)]
+pub struct Stat {
+    saved_killmails_count: u32,
+    stat_access_count: u32,
+    select_ids_by_date_count: u32,
+}
+impl Responder for Stat {
+    type Body = actix_web::body::BoxBody;
+    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
+        let body = serde_json::to_string(&self).unwrap();
+        HttpResponse::Ok()
+            .content_type(actix_web::http::header::ContentType::json())
+            .body(body)
     }
 }
 
@@ -52,32 +86,14 @@ impl Responder for Status {
 }
 
 /******************************************************************************/
-#[derive(Serialize, Clone, Default)]
-pub struct Stat {
-    received_killmails: u32,
-}
-impl Stat {
-    pub fn increase_killmail_count(&mut self) {
-        self.received_killmails += 1;
-    }
-}
-impl Responder for Stat {
-    type Body = actix_web::body::BoxBody;
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-        let body = serde_json::to_string(&self).unwrap();
-        HttpResponse::Ok()
-            .content_type(actix_web::http::header::ContentType::json())
-            .body(body)
-    }
-}
 pub async fn statistic(ctx: web::Data<AppState>) -> impl Responder {
-    if let Some(stat) = ctx.stat.lock().ok() {
+    ctx.note_stat_access_count();
+    if let Ok(stat) = ctx.stat.try_lock() {
         return stat.clone();
     } else {
         return Stat::default();
     }
 }
-
 /******************************************************************************/
 #[derive(Serialize, Clone, Default)]
 pub struct KillmailIds {
@@ -86,31 +102,29 @@ pub struct KillmailIds {
 pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> impl Responder {
     match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
         Ok(date) => {
+            ctx.note_select_ids_by_date_count();
             match ctx.connection.lock() {
-                Ok(conn) => {
-                    match database::select_ids_by_date(&conn, &date) {
-                        Ok(vec) => {
-                            let json = serde_json::to_string(&vec).unwrap();
-                            format!("{json}")
-                        }
-                        Err(what) => {
-                            error!("Failed to select ids from DB: {what}");
-                            Status::json(format!("{what}"))
-                        }
+                Ok(conn) => match database::select_ids_by_date(&conn, &date) {
+                    Ok(vec) => {
+                        let json = serde_json::to_string(&vec).unwrap();
+                        format!("{json}")
                     }
-                }
+                    Err(what) => {
+                        error!("Failed to select ids from DB: {what}");
+                        Status::json(format!("{what}"))
+                    }
+                },
                 Err(what) => {
                     error!("Failed to lock connection: {what}");
                     Status::json(format!("{what}"))
                 }
             }
-        },
+        }
         Err(what) => {
             warn!("Can't parse date '{date}' due to '{what}'");
             Status::json(format!("Can't parse date '{date}' due to '{what}'"))
         }
     }
-
 }
 
 /******************************************************************************/
