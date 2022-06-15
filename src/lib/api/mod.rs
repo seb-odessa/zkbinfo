@@ -1,15 +1,17 @@
 use actix_web::{http::header::ContentType, web, HttpRequest, HttpResponse, Responder};
-// use anyhow::anyhow;
+
 use chrono::NaiveDate;
 use log::{error, info, warn};
-// use rusqlite::Connection;
+
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 use crate::database;
 use crate::killmail;
+use database::RawHistory;
 use database::SqlitePool;
+use database::RelationType;
 
 pub struct AppState {
     pub stat: Mutex<Stat>,
@@ -164,33 +166,47 @@ pub async fn save(ctx: web::Data<AppState>, json: String) -> impl Responder {
 }
 
 /******************************************************************************/
-#[derive(Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct Wins {
     killmails: Vec<i32>,
     total_damage: i32,
-    ships: BTreeMap<i32, usize>,
+    ships: HashMap<i32, usize>,
 }
 
-#[derive(Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct Losses {
     killmails: Vec<i32>,
     total_damage: i32,
-    ships: BTreeMap<i32, usize>,
+    ships: HashMap<i32, usize>,
 }
 
-#[derive(Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone, Default)]
+pub struct Relations {
+    pub id: i32,
+    pub count: usize,
+}
+
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct CharacterReport {
     id: i32,
     wins: Wins,
     losses: Losses,
+    solar_systems: HashMap<i32, usize>,
+    friends: Vec<Relations>,
+    enemies: Vec<Relations>,
+    friends_corp: Vec<Relations>,
+    enemies_corp: Vec<Relations>,
+    friends_alli: Vec<Relations>,
+    enemies_alli: Vec<Relations>,
 }
 impl CharacterReport {
-    pub fn from(id: i32, rows: Vec<database::RawHistory>) -> Self {
+    pub fn from(id: i32, rows: Vec<RawHistory>) -> Self {
         let mut report = CharacterReport::default();
         report.id = id;
         report.wins.killmails.reserve(rows.len());
         report.losses.killmails.reserve(rows.len());
         for row in rows {
+            *report.solar_systems.entry(row.solar_system_id).or_insert(0) += 1;
             if row.is_victim {
                 report.losses.killmails.push(row.killmail_id);
                 report.losses.total_damage += row.damage;
@@ -211,22 +227,26 @@ impl CharacterReport {
 
 fn character_report_impl(
     ctx: web::Data<AppState>,
-    character: web::Path<String>,
-) -> anyhow::Result<(i32, Vec<database::RawHistory>)> {
-    let id = character.parse::<i32>()?;
+    id: web::Path<String>,
+) -> anyhow::Result<CharacterReport> {
+    ctx.note_get_character_report_count();
+    let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
     let conn = pool.get()?;
     let rows = database::character_history(&conn, id)?;
-    ctx.note_get_character_report_count();
-    Ok((id, rows))
+    let mut report = CharacterReport::from(id, rows);
+    report.friends = database::character_relations(&conn, id, RelationType::Friends)?;
+    report.enemies = database::character_relations(&conn, id, RelationType::Enemies)?;
+    report.friends_corp = database::character_relations(&conn, id, RelationType::FriendsCorp)?;
+    report.enemies_corp = database::character_relations(&conn, id, RelationType::EnemiesCorp)?;
+    report.friends_alli = database::character_relations(&conn, id, RelationType::FriendsAlli)?;
+    report.enemies_alli = database::character_relations(&conn, id, RelationType::EnemiesAlli)?;
+    Ok(report)
 }
 
-pub async fn character_report(
-    ctx: web::Data<AppState>,
-    character: web::Path<String>,
-) -> impl Responder {
-    let json = match character_report_impl(ctx, character) {
-        Ok((id, rows)) => serde_json::to_string(&CharacterReport::from(id, rows)).unwrap(),
+pub async fn character_report(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    let json = match character_report_impl(ctx, id) {
+        Ok(report) => serde_json::to_string(&report).unwrap(),
         Err(what) => Status::json(format!("{what}")),
     };
 
