@@ -1,4 +1,4 @@
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header::ContentType, web, HttpRequest, HttpResponse, Responder};
 use chrono::NaiveDate;
 use log::{error, warn};
 use rusqlite::Connection;
@@ -100,14 +100,13 @@ pub struct KillmailIds {
     ids: Vec<killmail::Key>,
 }
 pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> impl Responder {
-    match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
+    let json = match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
         Ok(date) => {
             ctx.note_select_ids_by_date_count();
             match ctx.connection.lock() {
                 Ok(conn) => match database::select_ids_by_date(&conn, &date) {
                     Ok(vec) => {
-                        let json = serde_json::to_string(&vec).unwrap();
-                        format!("{json}")
+                        serde_json::to_string(&vec).unwrap()
                     }
                     Err(what) => {
                         error!("Failed to select ids from DB: {what}");
@@ -124,7 +123,10 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
             warn!("Can't parse date '{date}' due to '{what}'");
             Status::json(format!("Can't parse date '{date}' due to '{what}'"))
         }
-    }
+    };
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(json)
 }
 
 /******************************************************************************/

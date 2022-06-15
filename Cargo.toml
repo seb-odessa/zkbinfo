@@ -15,6 +15,11 @@ path = "src/zkbinfo.rs"
 name = "websocket_client"
 path = "src/websocket_client.rs"
 
+[[bin]]
+name = "fetch_by_date"
+path = "src/fetch_by_date.rs"
+
+
 [dependencies]
 anyhow = "1.0.57"
 actix = "0.13.0"
