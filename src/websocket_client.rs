@@ -1,17 +1,27 @@
 use env_logger;
 use log::{error, info};
-use websockets::{Frame, WebSocket, WebSocketError};
 use tokio::time::{sleep, Duration};
+use websockets::{Frame, WebSocket, WebSocketError};
+
+use std::env;
 
 use lib::killmail::Killmail;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let api = "http://localhost:8080/killmail/save";
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    let host = env::var("ZKBINFO_HOST").unwrap_or(String::from("localhost"));
+    let port = env::var("ZKBINFO_PORT")
+        .unwrap_or_default()
+        .parse::<u16>()
+        .unwrap_or(8080);
+    let api = format!("http://{host}:{port}/killmail/save");
+    info!("zkbinfo API url: {api}");
+
     let wss = "wss://zkillboard.com/websocket/";
     let enable = r#"{"action":"sub","channel":"killstream"}"#;
 
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let client = reqwest::Client::new();
     info!("Reqwest client created");
     let mut ws = WebSocket::connect(wss).await?;
@@ -31,19 +41,18 @@ async fn main() -> anyhow::Result<()> {
                 } = response
                 {
                     parts.push(payload);
-                    if  !continuation || fin {
+                    if !continuation || fin {
                         let json = parts.join("");
                         parts.clear();
                         match serde_json::from_str::<Killmail>(&json) {
                             Ok(killmail) => {
                                 info!("killmail_id: {}", killmail.killmail_id);
-                                let res = client.post(api).json(&killmail).send().await;
+                                let res = client.post(&api).json(&killmail).send().await;
                                 if res.is_err() {
                                     sleep(Duration::from_secs(10)).await;
-                                    client.post(api).json(&killmail).send().await?;
+                                    client.post(&api).json(&killmail).send().await?;
                                 }
-
-                            },
+                            }
                             Err(what) => {
                                 error!(": {what}");
                             }
@@ -62,4 +71,3 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 }
-

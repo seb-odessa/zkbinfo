@@ -4,12 +4,17 @@ use anyhow::anyhow;
 use env_logger;
 use log::info;
 
+use std::env;
+
 use lib::api;
 use lib::database;
 use lib::killmail;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    let host = env::var("ZKBINFO_HOST").unwrap_or(String::from("localhost"));
+    let port = env::var("ZKBINFO_PORT").unwrap_or_default().parse::<u16>().unwrap_or(8080);
+
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let url = "killmail.db";
     info!("The Database path: {url}");
@@ -18,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
     let state = api::AppState::new(connection);
     let context = web::Data::new(state);
 
+    info!("Launching server at {host}:{port}");
     HttpServer::new(move || {
         App::new()
             .app_data(context.clone())
@@ -30,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
             .wrap(Logger::default())
     })
     .workers(3)
-    .bind(("127.0.0.1", 8080))?
+    .bind((host.as_str(), port))?
     .run()
     .await
     .map_err(|e| anyhow!(e))
