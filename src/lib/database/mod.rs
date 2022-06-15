@@ -5,7 +5,7 @@ use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection /*, Transaction*/};
 
-
+use crate::api::Relations;
 use crate::killmail::Key;
 use crate::killmail::Killmail;
 
@@ -108,7 +108,6 @@ pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result
     Ok(ids)
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct RawHistory {
     pub killmail_id: i32,
@@ -125,11 +124,11 @@ pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHi
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-             WHERE character_id = :id AND killmail_time and killmail_time > date('now','-2 month');"
+             WHERE character_id = {id} AND killmail_time and killmail_time > date('now','-2 month');"
         );
 
     let mut stmt = conn.prepare(&sql)?;
-    let iter = stmt.query_map(&[(":id", &id)], |row| {
+    let iter = stmt.query_map([], |row| {
         Ok(RawHistory {
             killmail_id: row.get(0)?,
             character_id: row.get(1)?,
@@ -139,6 +138,65 @@ pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHi
             damage: row.get(5)?,
             is_victim: row.get(6)?,
             solar_system_id: row.get(7)?,
+        })
+    })?;
+    Ok(iter.map(|res| res.unwrap()).collect())
+}
+
+#[derive(Debug, PartialEq)]
+pub enum RelationType {
+    Friends,
+    Enemies,
+    FriendsCorp,
+    EnemiesCorp,
+    FriendsAlli,
+    EnemiesAlli,
+}
+impl RelationType {
+    fn get_field(relation: &RelationType) -> &'static str {
+        match relation {
+            RelationType::Friends => "character_id",
+            RelationType::Enemies => "character_id",
+            RelationType::FriendsCorp => "corporation_id",
+            RelationType::EnemiesCorp => "corporation_id",
+            RelationType::FriendsAlli => "alliance_id",
+            RelationType::EnemiesAlli => "alliance_id",
+        }
+    }
+    fn get_victim_value(relation: &RelationType) -> i16 {
+        match relation {
+            RelationType::Friends => 0,
+            RelationType::Enemies => 1,
+            RelationType::FriendsCorp => 0,
+            RelationType::EnemiesCorp => 1,
+            RelationType::FriendsAlli => 0,
+            RelationType::EnemiesAlli => 1,
+        }
+    }
+}
+
+pub fn character_relations(
+    conn: &Connection,
+    id: i32,
+    rel: RelationType,
+) -> anyhow::Result<Vec<Relations>> {
+    let field = RelationType::get_field(&rel);
+    let victum_value = RelationType::get_victim_value(&rel);
+    let sql = format!(
+        "WITH RECURSIVE character_killmails(id) AS (
+           SELECT K.killmail_id
+	       FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
+	       WHERE character_id = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-2 month')
+        )
+        SELECT {field}, count(id) AS times FROM character_killmails JOIN participants ON id = killmail_id
+        WHERE character_id <> {id}
+        GROUP BY character_id
+        ORDER BY 2 DESC;");
+    let mut stmt = conn.prepare(&sql)?;
+    let iter = stmt.query_map([], |row| {
+        Ok(Relations {
+            id: row.get(0)?,
+            count: row.get(1)?,
         })
     })?;
     Ok(iter.map(|res| res.unwrap()).collect())
