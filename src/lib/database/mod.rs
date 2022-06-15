@@ -1,6 +1,8 @@
 use anyhow::anyhow;
 use chrono::NaiveDate;
+use log::error;
 use rusqlite::{named_params, Connection /*, Transaction*/};
+use std::sync::Mutex;
 
 use crate::killmail::Key;
 use crate::killmail::Killmail;
@@ -84,19 +86,27 @@ pub fn insert(conn: &Connection, killmail: Killmail) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result<Vec<Key>> {
+pub fn select_ids_by_date(conn: &Mutex<Connection>, date: &NaiveDate) -> anyhow::Result<Vec<Key>> {
     let left = date.format("%Y-%m-%d").to_string();
     let right = date.succ().format("%Y-%m-%d").to_string();
     let sql = format!(
         "SELECT killmail_id FROM killmails WHERE killmail_time BETWEEN '{left}' AND '{right}';"
     );
 
-    let mut ids = Vec::new();
-    let mut stmt = conn.prepare(&sql)?;
-    for id in stmt.query_map([], |row| row.get(0))? {
-        ids.push(id?);
+    match conn.try_lock() {
+        Ok(conn) => {
+            let mut stmt = conn.prepare(&sql)?;
+            let mut ids = Vec::new();
+            for id in stmt.query_map([], |row| row.get(0))? {
+                ids.push(id?);
+            }
+            Ok(ids)
+        }
+        Err(what) => {
+            error!("Can't lock connection: {what}");
+            Err(anyhow!(format!("Can't lock connection: {what}")))
+        }
     }
-    Ok(ids)
 }
 
 #[allow(dead_code)]
@@ -111,24 +121,32 @@ pub struct RawHistory {
     pub is_victim: bool,
 }
 
-pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHistory>> {
+pub fn character_history(conn: &Mutex<Connection>, id: i32) -> anyhow::Result<Vec<RawHistory>> {
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
              WHERE character_id = :id AND killmail_time and killmail_time > date('now','-2 month');"
         );
 
-    let mut stmt = conn.prepare(&sql)?;
-    let iter = stmt.query_map(&[(":id", &id)], |row| {
-        Ok(RawHistory {
-            killmail_id: row.get(0)?,
-            character_id: row.get(1)?,
-            corporation_id: row.get(2)?,
-            alliance_id: row.get(3)?,
-            ship_type_id: row.get(4)?,
-            damage: row.get(5)?,
-            is_victim: row.get(6)?,
-        })
-    })?;
-    return Ok(iter.map(|res| res.unwrap()).collect());
+    match conn.try_lock() {
+        Ok(conn) => {
+            let mut stmt = conn.prepare(&sql)?;
+            let iter = stmt.query_map(&[(":id", &id)], |row| {
+                Ok(RawHistory {
+                    killmail_id: row.get(0)?,
+                    character_id: row.get(1)?,
+                    corporation_id: row.get(2)?,
+                    alliance_id: row.get(3)?,
+                    ship_type_id: row.get(4)?,
+                    damage: row.get(5)?,
+                    is_victim: row.get(6)?,
+                })
+            })?;
+            Ok(iter.map(|res| res.unwrap()).collect())
+        }
+        Err(what) => {
+            error!("Can't lock connection: {what}");
+            Err(anyhow!(format!("Can't lock connection: {what}")))
+        }
+    }
 }
