@@ -51,7 +51,7 @@ pub fn insert(conn: &Mutex<Connection>, killmail: Killmail) -> anyhow::Result<()
         :damage,
         :is_victim)";
 
-    match conn.try_lock() {
+    match conn.lock() {
         Ok(conn) => {
             let mut insert_killmail_stmt = conn.prepare(INSERT_KILLMAIL)?;
             let mut insert_participant_stmt = conn.prepare(INSERT_PARTICIPANT)?;
@@ -101,7 +101,7 @@ pub fn select_ids_by_date(conn: &Mutex<Connection>, date: &NaiveDate) -> anyhow:
         "SELECT killmail_id FROM killmails WHERE killmail_time BETWEEN '{left}' AND '{right}';"
     );
 
-    match conn.try_lock() {
+    match conn.lock() {
         Ok(conn) => {
             let mut stmt = conn.prepare(&sql)?;
             let mut ids = Vec::new();
@@ -136,7 +136,7 @@ pub fn character_history(conn: &Mutex<Connection>, id: i32) -> anyhow::Result<Ve
              WHERE character_id = :id AND killmail_time and killmail_time > date('now','-2 month');"
         );
 
-    match conn.try_lock() {
+    match conn.lock() {
         Ok(conn) => {
             let mut stmt = conn.prepare(&sql)?;
             let iter = stmt.query_map(&[(":id", &id)], |row| {
