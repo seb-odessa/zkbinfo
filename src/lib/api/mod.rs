@@ -10,8 +10,8 @@ use std::sync::Mutex;
 use crate::database;
 use crate::killmail;
 use database::RawHistory;
-use database::SqlitePool;
 use database::RelationType;
+use database::SqlitePool;
 
 pub struct AppState {
     pub stat: Mutex<Stat>,
@@ -181,23 +181,17 @@ pub struct Losses {
 }
 
 #[derive(Debug, Serialize, Clone, Default)]
-pub struct Relations {
-    pub id: i32,
-    pub count: usize,
-}
-
-#[derive(Debug, Serialize, Clone, Default)]
 pub struct CharacterReport {
     id: i32,
     wins: Wins,
     losses: Losses,
     solar_systems: HashMap<i32, usize>,
-    friends: Vec<Relations>,
-    enemies: Vec<Relations>,
-    friends_corp: Vec<Relations>,
-    enemies_corp: Vec<Relations>,
-    friends_alli: Vec<Relations>,
-    enemies_alli: Vec<Relations>,
+    friends: HashMap<i32, usize>,
+    enemies: HashMap<i32, usize>,
+    friends_corp: HashMap<i32, usize>,
+    enemies_corp: HashMap<i32, usize>,
+    friends_alli: HashMap<i32, usize>,
+    enemies_alli: HashMap<i32, usize>,
 }
 impl CharacterReport {
     pub fn from(id: i32, rows: Vec<RawHistory>) -> Self {
@@ -235,10 +229,19 @@ fn character_report_impl(
     let conn = pool.get()?;
     let rows = database::character_history(&conn, id)?;
     let mut report = CharacterReport::from(id, rows);
-    report.friends = database::character_relations(&conn, id, RelationType::Friends)?;
-    report.enemies = database::character_relations(&conn, id, RelationType::Enemies)?;
-    report.friends_corp = database::character_relations(&conn, id, RelationType::FriendsCorp)?;
-    report.enemies_corp = database::character_relations(&conn, id, RelationType::EnemiesCorp)?;
+    report.friends = database::character_relations(&conn, id, RelationType::Friends)?
+        .into_iter()
+        .collect();
+    report.enemies = database::character_relations(&conn, id, RelationType::Enemies)?
+        .into_iter()
+        .collect();
+    report.friends_corp = database::character_relations(&conn, id, RelationType::FriendsCorp)?
+        .into_iter()
+        .collect();
+    report.enemies_corp = database::character_relations(&conn, id, RelationType::EnemiesCorp)?
+        .into_iter()
+        .collect();
+
     // report.friends_alli = database::character_relations(&conn, id, RelationType::FriendsAlli)?;
     // report.enemies_alli = database::character_relations(&conn, id, RelationType::EnemiesAlli)?;
     Ok(report)
