@@ -3,8 +3,8 @@ use chrono::NaiveDate;
 use log::{error, warn};
 use rusqlite::Connection;
 use serde::Serialize;
-use std::sync::Mutex;
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use crate::database;
 use crate::killmail;
@@ -38,6 +38,12 @@ impl AppState {
             stat.select_ids_by_date_count += 1;
         }
     }
+
+    pub fn note_get_character_report_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.get_character_report_count += 1;
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Default)]
@@ -45,6 +51,7 @@ pub struct Stat {
     saved_killmails_count: u32,
     stat_access_count: u32,
     select_ids_by_date_count: u32,
+    get_character_report_count: u32,
 }
 impl Responder for Stat {
     type Body = actix_web::body::BoxBody;
@@ -104,16 +111,10 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
     let json = match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
         Ok(date) => {
             ctx.note_select_ids_by_date_count();
-            match ctx.connection.lock() {
-                Ok(conn) => match database::select_ids_by_date(&conn, &date) {
-                    Ok(vec) => serde_json::to_string(&vec).unwrap(),
-                    Err(what) => {
-                        error!("Failed to select ids from DB: {what}");
-                        Status::json(format!("{what}"))
-                    }
-                },
+            match database::select_ids_by_date(&ctx.connection, &date) {
+                Ok(vec) => serde_json::to_string(&vec).unwrap(),
                 Err(what) => {
-                    error!("Failed to lock connection: {what}");
+                    error!("Failed to select ids from DB: {what}");
                     Status::json(format!("{what}"))
                 }
             }
@@ -123,6 +124,7 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
             Status::json(format!("Can't parse date '{date}' due to '{what}'"))
         }
     };
+
     HttpResponse::Ok()
         .content_type(ContentType::json())
         .body(json)
@@ -180,18 +182,10 @@ pub async fn character_report(
     character: web::Path<String>,
 ) -> impl Responder {
     let json = if let Ok(id) = character.parse::<i32>() {
-        match ctx.connection.lock() {
-            Ok(conn) => match database::character_history(&conn, id) {
-                Ok(rows) => {
-                    serde_json::to_string(&CharacterReport::from(id, rows)).unwrap()
-                }
-                Err(what) => {
-                    error!("Failed to select ids from DB: {what}");
-                    Status::json(format!("{what}"))
-                }
-            },
+        match database::character_history(&ctx.connection, id) {
+            Ok(rows) => serde_json::to_string(&CharacterReport::from(id, rows)).unwrap(),
             Err(what) => {
-                error!("Failed to lock connection: {what}");
+                error!("Failed to select ids from DB: {what}");
                 Status::json(format!("{what}"))
             }
         }
