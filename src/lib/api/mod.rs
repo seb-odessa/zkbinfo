@@ -194,14 +194,14 @@ impl CharacterReport {
             if row.is_victim {
                 report.losses.killmails.push(row.killmail_id);
                 report.losses.total_damage += row.damage;
-                if let Some(count) = report.losses.ships.get_mut(&row.ship_type_id.unwrap_or_default()) {
-                    *count += 1;
+                if let Some(id) = row.ship_type_id {
+                    *report.losses.ships.entry(id).or_insert(0) += 1;
                 }
             } else {
                 report.wins.killmails.push(row.killmail_id);
                 report.wins.total_damage += row.damage;
-                if let Some(count) = report.wins.ships.get_mut(&row.ship_type_id.unwrap_or_default()) {
-                    *count += 1;
+                if let Some(id) = row.ship_type_id {
+                    *report.wins.ships.entry(id).or_insert(0) += 1;
                 }
             }
         }
