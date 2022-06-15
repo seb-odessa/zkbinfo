@@ -1,24 +1,30 @@
 use actix_web::{http::header::ContentType, web, HttpRequest, HttpResponse, Responder};
+// use anyhow::anyhow;
 use chrono::NaiveDate;
-use log::{error, warn};
-use rusqlite::Connection;
+use log::{error, info, warn};
+// use rusqlite::Connection;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use crate::database;
 use crate::killmail;
+use database::SqlitePool;
 
 pub struct AppState {
     pub stat: Mutex<Stat>,
-    pub connection: Mutex<Connection>,
+    pub pool: SqlitePool,
 }
 impl AppState {
-    pub fn new(connection: Connection) -> Self {
+    pub fn new(pool: SqlitePool) -> Self {
         Self {
             stat: Mutex::new(Stat::default()),
-            connection: Mutex::new(connection),
+            pool: pool,
         }
+    }
+
+    pub fn get_pool(&self) -> SqlitePool {
+        self.pool.clone()
     }
 
     pub fn note_killmail_count(&self) {
@@ -111,7 +117,9 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
     let json = match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
         Ok(date) => {
             ctx.note_select_ids_by_date_count();
-            match database::select_ids_by_date(&ctx.connection, &date) {
+            let pool = ctx.get_pool();
+            let conn = pool.get().unwrap();
+            match database::select_ids_by_date(&conn, &date) {
                 Ok(vec) => serde_json::to_string(&vec).unwrap(),
                 Err(what) => {
                     error!("Failed to select ids from DB: {what}");
@@ -132,6 +140,30 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
 
 /******************************************************************************/
 
+fn save_impl(ctx: web::Data<AppState>, json: String) -> anyhow::Result<i32> {
+    let killmail = serde_json::from_str::<killmail::Killmail>(&json)?;
+    let id = killmail.killmail_id;
+    let pool = ctx.get_pool();
+    let conn = pool.get()?;
+    let _ = database::insert(&conn, killmail)?;
+    ctx.note_killmail_count();
+    Ok(id)
+}
+
+pub async fn save(ctx: web::Data<AppState>, json: String) -> impl Responder {
+    match save_impl(ctx, json) {
+        Ok(id) => {
+            info!("killmail {} saved in the database", id);
+            Status::ok()
+        }
+        Err(what) => {
+            error!("Failed to select ids from DB: {what}");
+            Status::from(format!("{what}"))
+        }
+    }
+}
+
+/******************************************************************************/
 #[derive(Serialize, Clone, Default)]
 pub struct Wins {
     killmails: Vec<i32>,
@@ -177,21 +209,25 @@ impl CharacterReport {
     }
 }
 
+fn character_report_impl(
+    ctx: web::Data<AppState>,
+    character: web::Path<String>,
+) -> anyhow::Result<(i32, Vec<database::RawHistory>)> {
+    let id = character.parse::<i32>()?;
+    let pool = ctx.get_pool();
+    let conn = pool.get()?;
+    let rows = database::character_history(&conn, id)?;
+    ctx.note_get_character_report_count();
+    Ok((id, rows))
+}
+
 pub async fn character_report(
     ctx: web::Data<AppState>,
     character: web::Path<String>,
 ) -> impl Responder {
-    let json = if let Ok(id) = character.parse::<i32>() {
-        match database::character_history(&ctx.connection, id) {
-            Ok(rows) => serde_json::to_string(&CharacterReport::from(id, rows)).unwrap(),
-            Err(what) => {
-                error!("Failed to select ids from DB: {what}");
-                Status::json(format!("{what}"))
-            }
-        }
-    } else {
-        warn!("Can't parse '{character}' to i32");
-        Status::json(format!("Can't parse '{character}' to i32"))
+    let json = match character_report_impl(ctx, character) {
+        Ok((id, rows)) => serde_json::to_string(&CharacterReport::from(id, rows)).unwrap(),
+        Err(what) => Status::json(format!("{what}")),
     };
 
     HttpResponse::Ok()

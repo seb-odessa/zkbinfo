@@ -3,39 +3,10 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
-use actix_web::{web, Responder};
-use log::{error, info};
-
-use crate::api;
-use crate::database;
-
 pub type Key = i32;
 pub type BinHash = [u8; 20];
 pub type StrHash = String;
 pub type KillmailKey = (Key, StrHash);
-
-pub async fn save(ctx: web::Data<api::AppState>, json: String) -> impl Responder {
-    match serde_json::from_str::<Killmail>(&json) {
-        Ok(killmail) => {
-            let id = killmail.killmail_id;
-            match database::insert(&ctx.connection, killmail) {
-                Ok(_) => {
-                    info!("killmail {} saved in the database", id);
-                    ctx.note_killmail_count();
-                    api::Status::ok()
-                }
-                Err(what) => {
-                    error!("Failed to lock connection: {what}");
-                    api::Status::from(format!("{what}"))
-                }
-            }
-        }
-        Err(what) => {
-            error!("Failed to parse killamil: {what}");
-            api::Status::from(format!("{what}"))
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct IdHashBinary {

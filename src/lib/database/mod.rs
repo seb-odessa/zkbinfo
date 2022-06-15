@@ -1,15 +1,22 @@
 use anyhow::anyhow;
 use chrono::NaiveDate;
-use log::error;
+
+use r2d2;
+use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection /*, Transaction*/};
-use std::sync::Mutex;
+
 
 use crate::killmail::Key;
 use crate::killmail::Killmail;
 
-pub fn create_connection(url: &str) -> anyhow::Result<Connection> {
-    let conn = Connection::open(url)?;
-    let _ = conn.execute_batch("
+pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
+
+pub fn create_connection(url: &str) -> anyhow::Result<SqlitePool> {
+    // let conn = Connection::open(url)?;
+    let manager = SqliteConnectionManager::file(url);
+    let pool = r2d2::Pool::new(manager).unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch("
         PRAGMA foreign_keys = ON;
 
         CREATE TABLE IF NOT EXISTS killmails(
@@ -33,10 +40,10 @@ pub fn create_connection(url: &str) -> anyhow::Result<Connection> {
         CREATE INDEX IF NOT EXISTS participant_idx ON participants(character_id, corporation_id, alliance_id);
     ").map_err(|e| anyhow!(e))?;
 
-    return Ok(conn);
+    return Ok(pool);
 }
 
-pub fn insert(conn: &Mutex<Connection>, killmail: Killmail) -> anyhow::Result<()> {
+pub fn insert(conn: &Connection, killmail: Killmail) -> anyhow::Result<()> {
     const INSERT_KILLMAIL: &str = r"INSERT OR IGNORE INTO killmails VALUES (
         :killmail_id,
         :killmail_time,
@@ -51,70 +58,54 @@ pub fn insert(conn: &Mutex<Connection>, killmail: Killmail) -> anyhow::Result<()
         :damage,
         :is_victim)";
 
-    match conn.lock() {
-        Ok(conn) => {
-            let mut insert_killmail_stmt = conn.prepare(INSERT_KILLMAIL)?;
-            let mut insert_participant_stmt = conn.prepare(INSERT_PARTICIPANT)?;
+    let mut insert_killmail_stmt = conn.prepare(INSERT_KILLMAIL)?;
+    let mut insert_participant_stmt = conn.prepare(INSERT_PARTICIPANT)?;
 
-            insert_killmail_stmt.execute(named_params! {
-                ":killmail_id": killmail.killmail_id,
-                ":killmail_time": killmail.killmail_time,
-                ":solar_system_id": killmail.solar_system_id
-            })?;
+    insert_killmail_stmt.execute(named_params! {
+        ":killmail_id": killmail.killmail_id,
+        ":killmail_time": killmail.killmail_time,
+        ":solar_system_id": killmail.solar_system_id
+    })?;
 
-            let victim = killmail.victim;
-            insert_participant_stmt.execute(named_params! {
-                ":killmail_id": killmail.killmail_id,
-                ":character_id": victim.character_id,
-                ":corporation_id": victim.corporation_id,
-                ":alliance_id": victim.alliance_id,
-                ":ship_type_id": victim.ship_type_id,
-                ":damage": victim.damage_taken,
-                ":is_victim": 1
-            })?;
+    let victim = killmail.victim;
+    insert_participant_stmt.execute(named_params! {
+        ":killmail_id": killmail.killmail_id,
+        ":character_id": victim.character_id,
+        ":corporation_id": victim.corporation_id,
+        ":alliance_id": victim.alliance_id,
+        ":ship_type_id": victim.ship_type_id,
+        ":damage": victim.damage_taken,
+        ":is_victim": 1
+    })?;
 
-            for attacker in killmail.attackers {
-                insert_participant_stmt.execute(named_params! {
-                    ":killmail_id": killmail.killmail_id,
-                    ":character_id": attacker.character_id,
-                    ":corporation_id": attacker.corporation_id,
-                    ":alliance_id": attacker.alliance_id,
-                    ":ship_type_id": attacker.ship_type_id,
-                    ":damage": attacker.damage_done,
-                    ":is_victim": 0
-                })?;
-            }
-
-            Ok(())
-        }
-        Err(what) => {
-            error!("Can't lock connection: {what}");
-            Err(anyhow!(format!("Can't lock connection: {what}")))
-        }
+    for attacker in killmail.attackers {
+        insert_participant_stmt.execute(named_params! {
+            ":killmail_id": killmail.killmail_id,
+            ":character_id": attacker.character_id,
+            ":corporation_id": attacker.corporation_id,
+            ":alliance_id": attacker.alliance_id,
+            ":ship_type_id": attacker.ship_type_id,
+            ":damage": attacker.damage_done,
+            ":is_victim": 0
+        })?;
     }
+
+    Ok(())
 }
 
-pub fn select_ids_by_date(conn: &Mutex<Connection>, date: &NaiveDate) -> anyhow::Result<Vec<Key>> {
+pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result<Vec<Key>> {
     let left = date.format("%Y-%m-%d").to_string();
     let right = date.succ().format("%Y-%m-%d").to_string();
     let sql = format!(
         "SELECT killmail_id FROM killmails WHERE killmail_time BETWEEN '{left}' AND '{right}';"
     );
 
-    match conn.lock() {
-        Ok(conn) => {
-            let mut stmt = conn.prepare(&sql)?;
-            let mut ids = Vec::new();
-            for id in stmt.query_map([], |row| row.get(0))? {
-                ids.push(id?);
-            }
-            Ok(ids)
-        }
-        Err(what) => {
-            error!("Can't lock connection: {what}");
-            Err(anyhow!(format!("Can't lock connection: {what}")))
-        }
+    let mut stmt = conn.prepare(&sql)?;
+    let mut ids = Vec::new();
+    for id in stmt.query_map([], |row| row.get(0))? {
+        ids.push(id?);
     }
+    Ok(ids)
 }
 
 #[allow(dead_code)]
@@ -127,34 +118,28 @@ pub struct RawHistory {
     pub ship_type_id: i32,
     pub damage: i32,
     pub is_victim: bool,
+    pub solar_system_id: i32,
 }
 
-pub fn character_history(conn: &Mutex<Connection>, id: i32) -> anyhow::Result<Vec<RawHistory>> {
+pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHistory>> {
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
              WHERE character_id = :id AND killmail_time and killmail_time > date('now','-2 month');"
         );
 
-    match conn.lock() {
-        Ok(conn) => {
-            let mut stmt = conn.prepare(&sql)?;
-            let iter = stmt.query_map(&[(":id", &id)], |row| {
-                Ok(RawHistory {
-                    killmail_id: row.get(0)?,
-                    character_id: row.get(1)?,
-                    corporation_id: row.get(2)?,
-                    alliance_id: row.get(3)?,
-                    ship_type_id: row.get(4)?,
-                    damage: row.get(5)?,
-                    is_victim: row.get(6)?,
-                })
-            })?;
-            Ok(iter.map(|res| res.unwrap()).collect())
-        }
-        Err(what) => {
-            error!("Can't lock connection: {what}");
-            Err(anyhow!(format!("Can't lock connection: {what}")))
-        }
-    }
+    let mut stmt = conn.prepare(&sql)?;
+    let iter = stmt.query_map(&[(":id", &id)], |row| {
+        Ok(RawHistory {
+            killmail_id: row.get(0)?,
+            character_id: row.get(1)?,
+            corporation_id: row.get(2)?,
+            alliance_id: row.get(3)?,
+            ship_type_id: row.get(4)?,
+            damage: row.get(5)?,
+            is_victim: row.get(6)?,
+            solar_system_id: row.get(7)?,
+        })
+    })?;
+    Ok(iter.map(|res| res.unwrap()).collect())
 }
