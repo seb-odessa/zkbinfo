@@ -62,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
                     .await?
                     .json::<killmail::Killmail>()
                     .await?;
+
                 let mut timeout = 10;
                 while let Err(what) = client.post(&zkbinfo_save_api).json(&killmail).send().await {
                     error!("{what}");
