@@ -105,9 +105,7 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
             ctx.note_select_ids_by_date_count();
             match ctx.connection.lock() {
                 Ok(conn) => match database::select_ids_by_date(&conn, &date) {
-                    Ok(vec) => {
-                        serde_json::to_string(&vec).unwrap()
-                    }
+                    Ok(vec) => serde_json::to_string(&vec).unwrap(),
                     Err(what) => {
                         error!("Failed to select ids from DB: {what}");
                         Status::json(format!("{what}"))
@@ -130,3 +128,26 @@ pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> imp
 }
 
 /******************************************************************************/
+
+#[derive(Serialize, Clone, Default)]
+pub struct CharacterReport {
+    id: i32,
+}
+
+pub async fn character_report(
+    _ctx: web::Data<AppState>,
+    character: web::Path<String>,
+) -> impl Responder {
+    let json;
+    if let Ok(id) = character.parse::<i32>() {
+        let report = CharacterReport { id };
+        json = serde_json::to_string(&report).unwrap();
+    } else {
+        warn!("Can't parse '{character}' to i32");
+        json = Status::json(format!("Can't parse '{character}' to i32"))
+    }
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(json)
+}
