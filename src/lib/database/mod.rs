@@ -205,10 +205,10 @@ pub fn relations(
 	       FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
 	       WHERE {object_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-30 days')
         )
-        SELECT {relation_field}, count(id) AS times FROM character_killmails JOIN participants ON id = killmail_id
+        SELECT {relation_field} AS id, count(id) AS times
+        FROM character_killmails JOIN participants ON id = killmail_id
         WHERE {object_field} <> {id}
-        GROUP BY 1
-        ORDER BY 2 DESC;");
+        GROUP BY 1;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| Ok((row.get(0).unwrap_or_default(), row.get(1)?)))?;
     Ok(iter
