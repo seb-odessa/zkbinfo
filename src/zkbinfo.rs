@@ -17,9 +17,9 @@ async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let url = "killmail.db";
     info!("The Database path: {url}");
-    let connection = database::create_connection(&url)?;
+    let pool = database::create_pool(&url)?;
     info!("Connection to the {url} complete.");
-    let state = api::AppState::new(connection);
+    let state = api::AppState::new(pool);
     let context = web::Data::new(state);
 
     info!("Launching server at {host}:{port}");
