@@ -63,16 +63,42 @@ impl AppState {
             stat.character_enemies_count += 1;
         }
     }
+
+    pub fn notify_access(&self, id: StatType) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            *stat.access_count.entry(id).or_insert(0) += 1;
+        }
+    }
+}
+
+#[derive(Serialize, Clone, Eq, PartialEq, Hash)]
+pub enum StatType {
+    SavedKillmailsCount,
+    StatisticAccessedCount,
+    SelectKillmailsByDateCount,
+    CharacterReportCount,
+    CharacterFriendsCount,
+    CharacterEnemiesCount,
+    CharacterFriendsCorporationCount,
+    CharacterEnemiesCorporationCount,
+    CharacterFriendsAllianceCount,
+    CharacterEnemiesAllianceCount,
 }
 
 #[derive(Serialize, Clone, Default)]
 pub struct Stat {
+    access_count: HashMap<StatType, usize>,
+
     saved_killmails_count: u32,
     stat_access_count: u32,
     select_ids_by_date_count: u32,
     character_report_count: u32,
     character_friends_count: u32,
     character_enemies_count: u32,
+    character_friends_corp_count: u32,
+    character_enemies_corp_count: u32,
+    character_friends_alli_count: u32,
+    character_enemies_alli_count: u32,
 }
 impl Responder for Stat {
     type Body = actix_web::body::BoxBody;
@@ -129,9 +155,9 @@ pub struct KillmailIds {
     ids: Vec<i32>,
 }
 pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::SelectKillmailsByDateCount);
     let json = match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
         Ok(date) => {
-            ctx.note_select_ids_by_date_count();
             let pool = ctx.get_pool();
             let conn = pool.get().unwrap();
             match database::select_ids_by_date(&conn, &date) {
@@ -161,11 +187,11 @@ fn save_impl(ctx: web::Data<AppState>, json: String) -> anyhow::Result<i32> {
     let pool = ctx.get_pool();
     let conn = pool.get()?;
     let _ = database::insert(&conn, killmail)?;
-    ctx.note_killmail_count();
     Ok(id)
 }
 
 pub async fn save(ctx: web::Data<AppState>, json: String) -> impl Responder {
+    ctx.notify_access(StatType::SavedKillmailsCount);
     match save_impl(ctx, json) {
         Ok(id) => {
             info!("killmail {} saved in the database", id);
@@ -236,7 +262,6 @@ fn character_report_impl(
     ctx: web::Data<AppState>,
     id: web::Path<String>,
 ) -> anyhow::Result<CharacterReport> {
-    ctx.note_character_report_count();
     let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
     let conn = pool.get()?;
@@ -270,6 +295,7 @@ fn character_report_impl(
 }
 
 pub async fn character_report(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterReportCount);
     let json = match character_report_impl(ctx, id) {
         Ok(report) => serde_json::to_string(&report).unwrap(),
         Err(what) => Status::json(format!("{what}")),
@@ -285,7 +311,6 @@ fn character_relation_impl(
     id: web::Path<String>,
     rel: RelationType,
 ) -> anyhow::Result<HashMap<i32, usize>> {
-    ctx.note_character_friends_count();
     let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
     let conn = pool.get()?;
@@ -295,26 +320,27 @@ fn character_relation_impl(
     Ok(map)
 }
 
-pub async fn character_friends(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let json = match character_relation_impl(ctx, id, RelationType::Friends) {
+fn character_relations_wrapper(
+    ctx: web::Data<AppState>,
+    id: web::Path<String>,
+    rel: RelationType,
+) -> String {
+    match character_relation_impl(ctx, id, rel) {
         Ok(report) => serde_json::to_string(&report).unwrap(),
         Err(what) => Status::json(format!("{what}")),
-    };
+    }
+}
 
+pub async fn character_friends(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsCount);
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(json)
+        .body(character_relations_wrapper(ctx, id, RelationType::Friends))
 }
 
 pub async fn character_enemies(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
-    let json = match character_relation_impl(ctx, id, RelationType::Enemies) {
-        Ok(report) => serde_json::to_string(&report).unwrap(),
-        Err(what) => Status::json(format!("{what}")),
-    };
-
+    ctx.notify_access(StatType::CharacterEnemiesCount);
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .body(json)
+        .body(character_relations_wrapper(ctx, id, RelationType::Enemies))
 }
-
-
