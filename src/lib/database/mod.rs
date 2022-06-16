@@ -195,7 +195,7 @@ pub fn character_relations(
         ORDER BY 2 DESC;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| {
-        Ok((row.get(0)?, row.get(1)?))
+        Ok((row.get(0).unwrap_or_default(), row.get(1)?))
     })?;
     Ok(iter.map(|res| res.unwrap()).collect())
 }
