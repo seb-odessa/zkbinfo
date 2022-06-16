@@ -1,56 +1,35 @@
 # zkbinfo
 
 Consider to add to the /etc/hosts
-
-```<YOUR_SERVER>  zkbinfo```
-And then use nex links:
+```
+<YOUR_SERVER>  zkbinfo
+```
+And then use next links:
 
 ### API section
-
-#### Get current statistic
+##### Get zkbinfo statistic
 http://zkbinfo:8080/api/stat
-```
-$ curl http://zkbinfo:8080/api/stat
-```
 
-
-#### Get saved killmail ids per date
+##### Get saved killmail ids per date
 http://zkbinfo:8080/api/killmail/saved/YYYY-MM-DD/
-
-e.g.:
-
 http://zkbinfo:8080/api/killmail/saved/2022-06-01/
 
-```
-$ curl http://zkbinfo:8080/api/killmail/saved/2022-06-02/
-```
-
-#### Get character's report
+##### Get character's report
 http://zkbinfo:8080/api/character/report/{id}/
-
-e.g.:
-
 http://zkbinfo:8080/api/character/report/1099051589/
 
-#### Get character's friends
+##### Get character's friends
 http://zkbinfo:8080/api/character/friends/{id}/
-
-e.g.:
-
 http://zkbinfo:8080/api/character/friends/1099051589/
 
-
-#### Get character's enemies
+##### Get character's enemies
 http://zkbinfo:8080/api/character/enemies/{id}/
-
-e.g.:
-
 http://zkbinfo:8080/api/character/enemies/1099051589/
 
 
 
 ### KILLMAIL section
-#### Saved killmail to the database
+#### Save killmail to the database
 ```
 $ curl -X POST zkbinfo:8080/killmail/save -d @"zkbinfo/doc/killmail.json"
 ```
