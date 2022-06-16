@@ -121,7 +121,7 @@ pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHi
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-             WHERE character_id = {id} AND killmail_time and killmail_time > date('now','-2 month');"
+             WHERE character_id = {id} AND killmail_time and killmail_time > date('now','-30 days');"
         );
 
     let mut stmt = conn.prepare(&sql)?;
@@ -203,7 +203,7 @@ pub fn relations(
         "WITH RECURSIVE character_killmails(id) AS (
            SELECT K.killmail_id
 	       FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-	       WHERE {object_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-2 month')
+	       WHERE {object_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-30 days')
         )
         SELECT {relation_field}, count(id) AS times FROM character_killmails JOIN participants ON id = killmail_id
         WHERE {object_field} <> {id}
