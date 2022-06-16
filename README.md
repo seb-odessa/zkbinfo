@@ -48,27 +48,27 @@ http://zkbinfo:8080/api/character/enemies/alli/1099051589/
 
 ##### Get corporations's friends {/character/corporation/alliance}
 ```
-http://zkbinfo:8080/api/corporations/friends/char/{id}/
-http://zkbinfo:8080/api/corporations/friends/corp/{id}/
-http://zkbinfo:8080/api/corporations/friends/alli/{id}/
+http://zkbinfo:8080/api/corporation/friends/char/{id}/
+http://zkbinfo:8080/api/corporation/friends/corp/{id}/
+http://zkbinfo:8080/api/corporation/friends/alli/{id}/
 ```
-http://zkbinfo:8080/api/corporations/friends/char/1099051589/
+http://zkbinfo:8080/api/corporation/friends/char/1099051589/
 
-http://zkbinfo:8080/api/corporations/friends/corp/1099051589/
+http://zkbinfo:8080/api/corporation/friends/corp/1099051589/
 
-http://zkbinfo:8080/api/corporations/friends/alli/1099051589/
+http://zkbinfo:8080/api/corporation/friends/alli/1099051589/
 
 ##### Get corporations's enemies {/character/corporation/alliance}
 ```
-http://zkbinfo:8080/api/corporations/enemies/char/{id}/
-http://zkbinfo:8080/api/corporations/enemies/corp/{id}/
-http://zkbinfo:8080/api/corporations/enemies/alli/{id}/
+http://zkbinfo:8080/api/corporation/enemies/char/{id}/
+http://zkbinfo:8080/api/corporation/enemies/corp/{id}/
+http://zkbinfo:8080/api/corporation/enemies/alli/{id}/
 ```
-http://zkbinfo:8080/api/corporations/enemies/char/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/char/1099051589/
 
-http://zkbinfo:8080/api/corporations/enemies/corp/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/corp/1099051589/
 
-http://zkbinfo:8080/api/corporations/enemies/alli/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/alli/1099051589/
 
 ##### Get alliance's friends {/character/corporation/alliance}
 ```
