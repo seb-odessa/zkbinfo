@@ -52,11 +52,11 @@ http://zkbinfo:8080/api/corporation/friends/char/{id}/
 http://zkbinfo:8080/api/corporation/friends/corp/{id}/
 http://zkbinfo:8080/api/corporation/friends/alli/{id}/
 ```
-http://zkbinfo:8080/api/corporation/friends/char/1099051589/
+http://zkbinfo:8080/api/corporation/friends/char/98575144/
 
-http://zkbinfo:8080/api/corporation/friends/corp/1099051589/
+http://zkbinfo:8080/api/corporation/friends/corp/98575144/
 
-http://zkbinfo:8080/api/corporation/friends/alli/1099051589/
+http://zkbinfo:8080/api/corporation/friends/alli/98575144/
 
 ##### Get corporations's enemies {/character/corporation/alliance}
 ```
@@ -64,11 +64,11 @@ http://zkbinfo:8080/api/corporation/enemies/char/{id}/
 http://zkbinfo:8080/api/corporation/enemies/corp/{id}/
 http://zkbinfo:8080/api/corporation/enemies/alli/{id}/
 ```
-http://zkbinfo:8080/api/corporation/enemies/char/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/char/98575144/
 
-http://zkbinfo:8080/api/corporation/enemies/corp/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/corp/98575144/
 
-http://zkbinfo:8080/api/corporation/enemies/alli/1099051589/
+http://zkbinfo:8080/api/corporation/enemies/alli/98575144/
 
 ##### Get alliance's friends {/character/corporation/alliance}
 ```
@@ -76,11 +76,11 @@ http://zkbinfo:8080/api/alliance/friends/char/{id}/
 http://zkbinfo:8080/api/alliance/friends/corp/{id}/
 http://zkbinfo:8080/api/alliance/friends/alli/{id}/
 ```
-http://zkbinfo:8080/api/alliance/friends/char/1099051589/
+http://zkbinfo:8080/api/alliance/friends/char/99010079/
 
-http://zkbinfo:8080/api/alliance/friends/corp/1099051589/
+http://zkbinfo:8080/api/alliance/friends/corp/99010079/
 
-http://zkbinfo:8080/api/alliance/friends/alli/1099051589/
+http://zkbinfo:8080/api/alliance/friends/alli/99010079/
 
 ##### Get alliance's enemies {/character/corporation/alliance}
 ```
@@ -88,11 +88,11 @@ http://zkbinfo:8080/api/alliance/enemies/char/{id}/
 http://zkbinfo:8080/api/alliance/enemies/corp/{id}/
 http://zkbinfo:8080/api/alliance/enemies/alli/{id}/
 ```
-http://zkbinfo:8080/api/alliance/enemies/char/1099051589/
+http://zkbinfo:8080/api/alliance/enemies/char/99010079/
 
-http://zkbinfo:8080/api/alliance/enemies/corp/1099051589/
+http://zkbinfo:8080/api/alliance/enemies/corp/99010079/
 
-http://zkbinfo:8080/api/alliance/enemies/alli/1099051589/
+http://zkbinfo:8080/api/alliance/enemies/alli/99010079/
 
 
 
