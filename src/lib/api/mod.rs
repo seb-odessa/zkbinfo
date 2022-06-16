@@ -47,9 +47,20 @@ impl AppState {
         }
     }
 
-    pub fn note_get_character_report_count(&self) {
+    pub fn note_character_report_count(&self) {
         if let Ok(mut stat) = self.stat.try_lock() {
-            stat.get_character_report_count += 1;
+            stat.character_report_count += 1;
+        }
+    }
+
+    pub fn note_character_friends_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.character_friends_count += 1;
+        }
+    }
+    pub fn note_character_enemies_count(&self) {
+        if let Ok(mut stat) = self.stat.try_lock() {
+            stat.character_enemies_count += 1;
         }
     }
 }
@@ -59,7 +70,9 @@ pub struct Stat {
     saved_killmails_count: u32,
     stat_access_count: u32,
     select_ids_by_date_count: u32,
-    get_character_report_count: u32,
+    character_report_count: u32,
+    character_friends_count: u32,
+    character_enemies_count: u32,
 }
 impl Responder for Stat {
     type Body = actix_web::body::BoxBody;
@@ -223,7 +236,7 @@ fn character_report_impl(
     ctx: web::Data<AppState>,
     id: web::Path<String>,
 ) -> anyhow::Result<CharacterReport> {
-    ctx.note_get_character_report_count();
+    ctx.note_character_report_count();
     let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
     let conn = pool.get()?;
@@ -266,3 +279,42 @@ pub async fn character_report(ctx: web::Data<AppState>, id: web::Path<String>) -
         .content_type(ContentType::json())
         .body(json)
 }
+
+fn character_relation_impl(
+    ctx: web::Data<AppState>,
+    id: web::Path<String>,
+    rel: RelationType,
+) -> anyhow::Result<HashMap<i32, usize>> {
+    ctx.note_character_friends_count();
+    let id = id.parse::<i32>()?;
+    let pool = ctx.get_pool();
+    let conn = pool.get()?;
+    let map = database::character_relations(&conn, id, rel)?
+        .into_iter()
+        .collect::<HashMap<i32, usize>>();
+    Ok(map)
+}
+
+pub async fn character_friends(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    let json = match character_relation_impl(ctx, id, RelationType::Friends) {
+        Ok(report) => serde_json::to_string(&report).unwrap(),
+        Err(what) => Status::json(format!("{what}")),
+    };
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(json)
+}
+
+pub async fn character_enemies(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    let json = match character_relation_impl(ctx, id, RelationType::Enemies) {
+        Ok(report) => serde_json::to_string(&report).unwrap(),
+        Err(what) => Status::json(format!("{what}")),
+    };
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(json)
+}
+
+

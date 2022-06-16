@@ -30,7 +30,9 @@ async fn main() -> anyhow::Result<()> {
                 web::scope("/api")
                     .route("/stat", web::get().to(api::statistic))
                     .route("/killmail/saved/{date}/", web::get().to(api::saved_ids))
-                    .route("/character/report/{id}/", web::get().to(api::character_report)),
+                    .route("/character/report/{id}/", web::get().to(api::character_report))
+                    .route("/character/friends/{id}/", web::get().to(api::character_friends))
+                    .route("/character/enemies/{id}/", web::get().to(api::character_enemies)),
             )
             .service(web::scope("/killmail").route("/save", web::post().to(api::save)))
             .wrap(Logger::default())

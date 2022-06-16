@@ -3,14 +3,14 @@ use chrono::NaiveDate;
 
 use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{named_params, Connection /*, Transaction*/};
+use rusqlite::{named_params, Connection};
 
 use crate::killmail::Killmail;
 
 pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
 
 pub fn create_connection(url: &str) -> anyhow::Result<SqlitePool> {
-    // let conn = Connection::open(url)?;
+
     let manager = SqliteConnectionManager::file(url);
     let pool = r2d2::Pool::new(manager).unwrap();
     let conn = pool.get().unwrap();
