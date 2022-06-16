@@ -11,6 +11,7 @@ use crate::database;
 use crate::killmail;
 use database::RawHistory;
 use database::RelationType;
+use database::RelationSubject;
 use database::SqlitePool;
 
 pub struct AppState {
@@ -234,26 +235,28 @@ pub async fn character_activity(ctx: web::Data<AppState>, id: web::Path<String>)
         .body(json)
 }
 
-fn character_relation_impl(
+fn relation_impl(
     ctx: web::Data<AppState>,
     id: web::Path<String>,
+    sbj: RelationSubject,
     rel: RelationType,
 ) -> anyhow::Result<HashMap<i32, usize>> {
     let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
     let conn = pool.get()?;
-    let map = database::character_relations(&conn, id, rel)?
+    let map = database::relations(&conn, id, sbj, rel)?
         .into_iter()
         .collect::<HashMap<i32, usize>>();
     Ok(map)
 }
 
-fn character_relations_wrapper(
+fn relations_wrapper(
     ctx: web::Data<AppState>,
     id: web::Path<String>,
+    sbj: RelationSubject,
     rel: RelationType,
 ) -> impl Responder {
-    let json = match character_relation_impl(ctx, id, rel) {
+    let json = match relation_impl(ctx, id, sbj, rel) {
         Ok(report) => serde_json::to_string(&report).unwrap(),
         Err(what) => Status::json(format!("{what}")),
     };
@@ -262,38 +265,115 @@ fn character_relations_wrapper(
         .body(json)
 }
 
-pub async fn character_friends(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+pub async fn character_friends_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterFriendsCount);
 
-    character_relations_wrapper(ctx, id, RelationType::FriendsChar)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::FriendsChar)
 }
 
-pub async fn character_enemies(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+pub async fn character_enemies_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterEnemiesCount);
 
-    character_relations_wrapper(ctx, id, RelationType::EnemiesChar)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::EnemiesChar)
 }
 
 pub async fn character_friends_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterFriendsCorporationCount);
 
-    character_relations_wrapper(ctx, id, RelationType::FriendsCorp)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::FriendsCorp)
 }
 
 pub async fn character_enemies_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterEnemiesCorporationCount);
 
-    character_relations_wrapper(ctx, id, RelationType::EnemiesCorp)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::EnemiesCorp)
 }
 
 pub async fn character_friends_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterFriendsAllianceCount);
 
-    character_relations_wrapper(ctx, id, RelationType::FriendsAlli)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::FriendsAlli)
 }
 
 pub async fn character_enemies_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterEnemiesAllianceCount);
 
-    character_relations_wrapper(ctx, id, RelationType::EnemiesAlli)
+    relations_wrapper(ctx, id, RelationSubject::Character, RelationType::EnemiesAlli)
 }
+
+/**************/
+
+pub async fn corporation_friends_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::FriendsChar)
+}
+
+pub async fn corporation_enemies_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::EnemiesChar)
+}
+
+pub async fn corporation_friends_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsCorporationCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::FriendsCorp)
+}
+
+pub async fn corporation_enemies_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesCorporationCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::EnemiesCorp)
+}
+
+pub async fn corporation_friends_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsAllianceCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::FriendsAlli)
+}
+
+pub async fn corporation_enemies_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesAllianceCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Corporation, RelationType::EnemiesAlli)
+}
+
+/**************/
+
+pub async fn alliance_friends_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::FriendsChar)
+}
+
+pub async fn alliance_enemies_char(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::EnemiesChar)
+}
+
+pub async fn alliance_friends_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsCorporationCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::FriendsCorp)
+}
+
+pub async fn alliance_enemies_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesCorporationCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::EnemiesCorp)
+}
+
+pub async fn alliance_friends_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterFriendsAllianceCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::FriendsAlli)
+}
+
+pub async fn alliance_enemies_alli(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+    ctx.notify_access(StatType::CharacterEnemiesAllianceCount);
+
+    relations_wrapper(ctx, id, RelationSubject::Alliance, RelationType::EnemiesAlli)
+}
+

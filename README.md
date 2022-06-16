@@ -46,6 +46,54 @@ http://zkbinfo:8080/api/character/enemies/corp/1099051589/
 
 http://zkbinfo:8080/api/character/enemies/alli/1099051589/
 
+##### Get corporations's friends {/character/corporation/alliance}
+```
+http://zkbinfo:8080/api/corporations/friends/char/{id}/
+http://zkbinfo:8080/api/corporations/friends/corp/{id}/
+http://zkbinfo:8080/api/corporations/friends/alli/{id}/
+```
+http://zkbinfo:8080/api/corporations/friends/char/1099051589/
+
+http://zkbinfo:8080/api/corporations/friends/corp/1099051589/
+
+http://zkbinfo:8080/api/corporations/friends/alli/1099051589/
+
+##### Get corporations's enemies {/character/corporation/alliance}
+```
+http://zkbinfo:8080/api/corporations/enemies/char/{id}/
+http://zkbinfo:8080/api/corporations/enemies/corp/{id}/
+http://zkbinfo:8080/api/corporations/enemies/alli/{id}/
+```
+http://zkbinfo:8080/api/corporations/enemies/char/1099051589/
+
+http://zkbinfo:8080/api/corporations/enemies/corp/1099051589/
+
+http://zkbinfo:8080/api/corporations/enemies/alli/1099051589/
+
+##### Get alliance's friends {/character/corporation/alliance}
+```
+http://zkbinfo:8080/api/alliance/friends/char/{id}/
+http://zkbinfo:8080/api/alliance/friends/corp/{id}/
+http://zkbinfo:8080/api/alliance/friends/alli/{id}/
+```
+http://zkbinfo:8080/api/alliance/friends/char/1099051589/
+
+http://zkbinfo:8080/api/alliance/friends/corp/1099051589/
+
+http://zkbinfo:8080/api/alliance/friends/alli/1099051589/
+
+##### Get alliance's enemies {/character/corporation/alliance}
+```
+http://zkbinfo:8080/api/alliance/enemies/char/{id}/
+http://zkbinfo:8080/api/alliance/enemies/corp/{id}/
+http://zkbinfo:8080/api/alliance/enemies/alli/{id}/
+```
+http://zkbinfo:8080/api/alliance/enemies/char/1099051589/
+
+http://zkbinfo:8080/api/alliance/enemies/corp/1099051589/
+
+http://zkbinfo:8080/api/alliance/enemies/alli/1099051589/
+
 
 
 ### KILLMAIL section
