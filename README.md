@@ -21,9 +21,6 @@ e.g.:
 
 http://zkbinfo:8080/api/killmail/saved/2022-06-01/
 
-http://zkbinfo:8080/api/killmail/saved/2022-06-02/
-
-http://zkbinfo:8080/api/killmail/saved/2022-06-03/
 ```
 $ curl http://zkbinfo:8080/api/killmail/saved/2022-06-02/
 ```
@@ -34,6 +31,22 @@ http://zkbinfo:8080/api/character/report/{id}/
 e.g.:
 
 http://zkbinfo:8080/api/character/report/1099051589/
+
+#### Get character's friends
+http://zkbinfo:8080/api/character/friends/{id}/
+
+e.g.:
+
+http://zkbinfo:8080/api/character/friends/1099051589/
+
+
+#### Get character's enemies
+http://zkbinfo:8080/api/character/enemies/{id}/
+
+e.g.:
+
+http://zkbinfo:8080/api/character/enemies/1099051589/
+
 
 
 ### KILLMAIL section
