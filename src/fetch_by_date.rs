@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
 
             let saved = reqwest::get(&zkbinfo_get_saved_api)
                 .await?
-                .json::<Vec<killmail::Key>>()
+                .json::<Vec<i32>>()
                 .await?;
             info!("Received {} killmails from zkbinfo", saved.len());
 

@@ -1,5 +1,6 @@
 /target
 .vscode
 *.db
+*.sqbpro
 Cargo.lock
-proj.sqbpro
+

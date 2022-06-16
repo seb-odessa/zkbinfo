@@ -1,6 +1,9 @@
 # zkbinfo
 
-The base path: http://zkbinfo:8080/
+Consider to add to the /etc/hosts
+
+```<YOUR_SERVER>  zkbinfo```
+And then use nex links:
 
 ### API section
 

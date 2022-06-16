@@ -5,7 +5,6 @@ use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection /*, Transaction*/};
 
-use crate::killmail::Key;
 use crate::killmail::Killmail;
 
 pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
@@ -92,7 +91,7 @@ pub fn insert(conn: &Connection, killmail: Killmail) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result<Vec<Key>> {
+pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result<Vec<i32>> {
     let left = date.format("%Y-%m-%d").to_string();
     let right = date.succ().format("%Y-%m-%d").to_string();
     let sql = format!(
