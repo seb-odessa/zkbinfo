@@ -10,7 +10,6 @@ use crate::killmail::Killmail;
 pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
 
 pub fn create_pool(url: &str) -> anyhow::Result<SqlitePool> {
-
     let manager = SqliteConnectionManager::file(url);
     let pool = r2d2::Pool::new(manager).unwrap();
     let conn = pool.get().unwrap();
@@ -180,7 +179,7 @@ pub enum RelationSubject {
     Alliance,
 }
 impl RelationSubject {
-        fn get_field(relation: &Self) -> &'static str {
+    fn get_field(relation: &Self) -> &'static str {
         match relation {
             RelationSubject::Character => "character_id",
             RelationSubject::Corporation => "corporation_id",
@@ -191,12 +190,13 @@ impl RelationSubject {
 
 pub type RawRelation = (i32, usize);
 
-pub fn character_relations(
+pub fn relations(
     conn: &Connection,
     id: i32,
+    sbj: RelationSubject,
     rel: RelationType,
 ) -> anyhow::Result<Vec<RawRelation>> {
-    let object_field = RelationSubject::get_field(&RelationSubject::Character);
+    let object_field = RelationSubject::get_field(&sbj);
     let relation_field = RelationType::get_field(&rel);
     let victum_value = RelationType::get_victim_value(&rel);
     let sql = format!(
@@ -210,9 +210,9 @@ pub fn character_relations(
         GROUP BY 1
         ORDER BY 2 DESC;");
     let mut stmt = conn.prepare(&sql)?;
-    let iter = stmt.query_map([], |row| {
-        Ok((row.get(0).unwrap_or_default(), row.get(1)?))
-    })?;
-    Ok(iter.map(|res| res.unwrap()).filter(|(id, _)| *id != 0).collect())
+    let iter = stmt.query_map([], |row| Ok((row.get(0).unwrap_or_default(), row.get(1)?)))?;
+    Ok(iter
+        .map(|res| res.unwrap())
+        .filter(|(id, _)| *id != 0)
+        .collect())
 }
-
