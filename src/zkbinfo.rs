@@ -28,11 +28,16 @@ async fn main() -> anyhow::Result<()> {
             .app_data(context.clone())
             .service(
                 web::scope("/api")
-                    .route("/stat", web::get().to(api::statistic))
-                    .route("/killmail/saved/{date}/", web::get().to(api::saved_ids))
+                    .route("/statistic", web::get().to(api::statistic))
+                    .route("/killmail/ids/{date}/", web::get().to(api::saved_ids))
                     .route("/character/report/{id}/", web::get().to(api::character_report))
-                    .route("/character/friends/{id}/", web::get().to(api::character_friends))
-                    .route("/character/enemies/{id}/", web::get().to(api::character_enemies)),
+                    .route("/character/friends/char/{id}/", web::get().to(api::character_friends))
+                    .route("/character/enemies/char/{id}/", web::get().to(api::character_enemies))
+                    .route("/character/friends/corp/{id}/", web::get().to(api::character_friends_corp))
+                    .route("/character/enemies/corp/{id}/", web::get().to(api::character_enemies_corp))
+                    .route("/character/friends/alli/{id}/", web::get().to(api::character_friends_alli))
+                    .route("/character/enemies/alli/{id}/", web::get().to(api::character_enemies_alli)),
+
             )
             .service(web::scope("/killmail").route("/save", web::post().to(api::save)))
             .wrap(Logger::default())
