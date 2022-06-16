@@ -9,7 +9,7 @@ use crate::killmail::Killmail;
 
 pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
 
-pub fn create_connection(url: &str) -> anyhow::Result<SqlitePool> {
+pub fn create_pool(url: &str) -> anyhow::Result<SqlitePool> {
 
     let manager = SqliteConnectionManager::file(url);
     let pool = r2d2::Pool::new(manager).unwrap();
