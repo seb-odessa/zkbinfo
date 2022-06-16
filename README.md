@@ -29,7 +29,9 @@ http://zkbinfo:8080/api/character/friends/corp/{id}/
 http://zkbinfo:8080/api/character/friends/alli/{id}/
 ```
 http://zkbinfo:8080/api/character/friends/char/1099051589/
+
 http://zkbinfo:8080/api/character/friends/corp/1099051589/
+
 http://zkbinfo:8080/api/character/friends/alli/1099051589/
 
 ##### Get character's enemies {/character/corporation/alliance}
@@ -39,7 +41,9 @@ http://zkbinfo:8080/api/character/enemies/corp/{id}/
 http://zkbinfo:8080/api/character/enemies/alli/{id}/
 ```
 http://zkbinfo:8080/api/character/enemies/char/1099051589/
+
 http://zkbinfo:8080/api/character/enemies/corp/1099051589/
+
 http://zkbinfo:8080/api/character/enemies/alli/1099051589/
 
 
