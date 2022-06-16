@@ -16,11 +16,11 @@ http://zkbinfo:8080/api/killmail/ids/YYYY-MM-DD/
 ```
 http://zkbinfo:8080/api/killmail/ids/2022-06-01/
 
-##### Get character's report
+##### Get character's activity
 ```
-http://zkbinfo:8080/api/character/report/{id}/
+http://zkbinfo:8080/api/character/activity/{id}/
 ```
-http://zkbinfo:8080/api/character/report/1099051589/
+http://zkbinfo:8080/api/character/activity/1099051589/
 
 ##### Get character's friends {/character/corporation/alliance}
 ```
