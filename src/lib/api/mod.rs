@@ -113,7 +113,7 @@ pub async fn statistic(ctx: web::Data<AppState>) -> impl Responder {
 /******************************************************************************/
 #[derive(Serialize, Clone, Default)]
 pub struct KillmailIds {
-    ids: Vec<killmail::Key>,
+    ids: Vec<i32>,
 }
 pub async fn saved_ids(ctx: web::Data<AppState>, date: web::Path<String>) -> impl Responder {
     let json = match NaiveDate::parse_from_str(&date, "%Y-%m-%d") {
