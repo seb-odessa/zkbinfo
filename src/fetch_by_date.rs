@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
         if let Ok(date) = NaiveDate::parse_from_str(args[1].as_str(), "%Y-%m-%d") {
             let zkbinfo_get_saved_api = format!(
-                "http://{host}:{port}/api/killmail/saved/{}/",
+                "http://{host}:{port}/api/killmail/ids/{}/",
                 date.format("%Y-%m-%d").to_string()
             );
             info!("zkbinfo API GET_SAVED: {zkbinfo_get_saved_api}");
