@@ -197,5 +197,5 @@ pub fn character_relations(
     let iter = stmt.query_map([], |row| {
         Ok((row.get(0).unwrap_or_default(), row.get(1)?))
     })?;
-    Ok(iter.map(|res| res.unwrap()).collect())
+    Ok(iter.map(|res| res.unwrap()).filter(|(id, _)| *id != 0).collect())
 }
