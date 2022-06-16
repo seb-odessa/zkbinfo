@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
                 web::scope("/api")
                     .route("/statistic", web::get().to(api::statistic))
                     .route("/killmail/ids/{date}/", web::get().to(api::saved_ids))
-                    .route("/character/report/{id}/", web::get().to(api::character_report))
+                    .route("/character/activity/{id}/", web::get().to(api::character_activity))
                     .route("/character/friends/char/{id}/", web::get().to(api::character_friends))
                     .route("/character/enemies/char/{id}/", web::get().to(api::character_enemies))
                     .route("/character/friends/corp/{id}/", web::get().to(api::character_friends_corp))

@@ -182,12 +182,6 @@ pub struct CharacterReport {
     wins: Wins,
     losses: Losses,
     solar_systems: HashMap<i32, usize>,
-    friends: HashMap<i32, usize>,
-    enemies: HashMap<i32, usize>,
-    friends_corp: HashMap<i32, usize>,
-    enemies_corp: HashMap<i32, usize>,
-    friends_alli: HashMap<i32, usize>,
-    enemies_alli: HashMap<i32, usize>,
 }
 impl CharacterReport {
     pub fn from(id: i32, rows: Vec<RawHistory>) -> Self {
@@ -223,35 +217,11 @@ fn character_report_impl(
     let pool = ctx.get_pool();
     let conn = pool.get()?;
     let rows = database::character_history(&conn, id)?;
-    let mut report = CharacterReport::from(id, rows);
-    report.friends = database::character_relations(&conn, id, RelationType::Friends)?
-        .into_iter()
-        .collect();
 
-    report.enemies = database::character_relations(&conn, id, RelationType::Enemies)?
-        .into_iter()
-        .collect();
-
-    report.friends_corp = database::character_relations(&conn, id, RelationType::FriendsCorp)?
-        .into_iter()
-        .collect();
-
-    report.enemies_corp = database::character_relations(&conn, id, RelationType::EnemiesCorp)?
-        .into_iter()
-        .collect();
-
-    report.friends_alli = database::character_relations(&conn, id, RelationType::FriendsAlli)?
-        .into_iter()
-        .collect();
-
-    report.enemies_alli = database::character_relations(&conn, id, RelationType::EnemiesAlli)?
-        .into_iter()
-        .collect();
-
-    Ok(report)
+    Ok(CharacterReport::from(id, rows))
 }
 
-pub async fn character_report(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
+pub async fn character_activity(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterReportCount);
 
     let json = match character_report_impl(ctx, id) {
