@@ -265,13 +265,13 @@ fn character_relations_wrapper(
 pub async fn character_friends(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterFriendsCount);
 
-    character_relations_wrapper(ctx, id, RelationType::Friends)
+    character_relations_wrapper(ctx, id, RelationType::FriendsChar)
 }
 
 pub async fn character_enemies(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {
     ctx.notify_access(StatType::CharacterEnemiesCount);
 
-    character_relations_wrapper(ctx, id, RelationType::Enemies)
+    character_relations_wrapper(ctx, id, RelationType::EnemiesChar)
 }
 
 pub async fn character_friends_corp(ctx: web::Data<AppState>, id: web::Path<String>) -> impl Responder {

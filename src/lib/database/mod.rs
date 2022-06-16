@@ -143,8 +143,8 @@ pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHi
 
 #[derive(Debug, PartialEq)]
 pub enum RelationType {
-    Friends,
-    Enemies,
+    FriendsChar,
+    EnemiesChar,
     FriendsCorp,
     EnemiesCorp,
     FriendsAlli,
@@ -153,8 +153,8 @@ pub enum RelationType {
 impl RelationType {
     fn get_field(relation: &RelationType) -> &'static str {
         match relation {
-            RelationType::Friends => "character_id",
-            RelationType::Enemies => "character_id",
+            RelationType::FriendsChar => "character_id",
+            RelationType::EnemiesChar => "character_id",
             RelationType::FriendsCorp => "corporation_id",
             RelationType::EnemiesCorp => "corporation_id",
             RelationType::FriendsAlli => "alliance_id",
@@ -163,12 +163,28 @@ impl RelationType {
     }
     fn get_victim_value(relation: &RelationType) -> i16 {
         match relation {
-            RelationType::Friends => 0,
-            RelationType::Enemies => 1,
+            RelationType::FriendsChar => 0,
+            RelationType::EnemiesChar => 1,
             RelationType::FriendsCorp => 0,
             RelationType::EnemiesCorp => 1,
             RelationType::FriendsAlli => 0,
             RelationType::EnemiesAlli => 1,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum RelationSubject {
+    Character,
+    Corporation,
+    Alliance,
+}
+impl RelationSubject {
+        fn get_field(relation: &Self) -> &'static str {
+        match relation {
+            RelationSubject::Character => "character_id",
+            RelationSubject::Corporation => "corporation_id",
+            RelationSubject::Alliance => "alliance_id",
         }
     }
 }
@@ -180,17 +196,18 @@ pub fn character_relations(
     id: i32,
     rel: RelationType,
 ) -> anyhow::Result<Vec<RawRelation>> {
-    let field = RelationType::get_field(&rel);
+    let object_field = RelationSubject::get_field(&RelationSubject::Character);
+    let relation_field = RelationType::get_field(&rel);
     let victum_value = RelationType::get_victim_value(&rel);
     let sql = format!(
         "WITH RECURSIVE character_killmails(id) AS (
            SELECT K.killmail_id
 	       FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-	       WHERE character_id = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-2 month')
+	       WHERE {object_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-2 month')
         )
-        SELECT {field}, count(id) AS times FROM character_killmails JOIN participants ON id = killmail_id
-        WHERE character_id <> {id}
-        GROUP BY character_id
+        SELECT {relation_field}, count(id) AS times FROM character_killmails JOIN participants ON id = killmail_id
+        WHERE {object_field} <> {id}
+        GROUP BY 1
         ORDER BY 2 DESC;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| {
@@ -198,3 +215,4 @@ pub fn character_relations(
     })?;
     Ok(iter.map(|res| res.unwrap()).filter(|(id, _)| *id != 0).collect())
 }
+
