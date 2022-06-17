@@ -1,7 +1,9 @@
 #/bin/bash
 
-CURRENT=2022-05-25
-FINISH=2022-06-01
+
+# e.g.: 2022-06-01
+CURRENT=$1
+FINISH=$2
 while [ "$CURRENT" != "$FINISH" ]; do
   echo $CURRENT
   CURRENT=$(date -I -d "$CURRENT + 1 day")
