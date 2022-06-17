@@ -91,6 +91,21 @@ pub fn create_pool(url: &str) -> anyhow::Result<SqlitePool> {
     return Ok(pool);
 }
 
+pub fn cleanup(conn: &Connection) -> anyhow::Result<()> {
+        conn.execute_batch("
+        DELETE FROM participants
+        WHERE killmail_id IN (
+	        SELECT killmail_id
+	        FROM killmails
+	        WHERE killmail_time < date('now', '-90 days')
+        );
+
+        DELETE FROM killmails
+	    WHERE killmail_time < date('now', '-90 days');
+    ").map_err(|e| anyhow!(e))?;
+    Ok(())
+}
+
 pub fn insert(conn: &Connection, killmail: Killmail) -> anyhow::Result<()> {
     const INSERT_KILLMAIL: &str = r"INSERT OR IGNORE INTO killmails VALUES (
         :killmail_id,

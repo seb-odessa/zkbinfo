@@ -1,8 +1,10 @@
+use actix_rt;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use anyhow::anyhow;
 use env_logger;
-use log::info;
+use log::{info, error};
+use tokio::time::Duration;
 
 use std::env;
 
@@ -22,8 +24,23 @@ async fn main() -> anyhow::Result<()> {
     info!("The Database path: {url}");
     let pool = database::create_pool(&url)?;
     info!("Connection to the {url} complete.");
+    let cleanup = pool.clone();
     let state = api::AppState::new(pool);
     let context = web::Data::new(state);
+
+    actix_rt::spawn(async move {
+        let mut interval = actix_rt::time::interval(Duration::from_secs(60*60*1));
+        loop {
+            interval.tick().await;
+            if let Ok(conn) = cleanup.get() {
+                if let Err(what) =  database::cleanup(&conn) {
+                    error!("{what}");
+                } else {
+                    info!("Cleanup performed");
+                }
+            }
+        }
+    });
 
     info!("Launching server at {host}:{port}");
     HttpServer::new(move || {
@@ -57,7 +74,6 @@ async fn main() -> anyhow::Result<()> {
                         "/alliance/activity/hourly/{id}/",
                         web::get().to(api::alliance::activity_hourly),
                     )
-
                     .route(
                         "/character/friends/char/{id}/",
                         web::get().to(api::character::friends_char),
