@@ -6,7 +6,7 @@ use tokio::time::Duration;
 use std::collections::HashMap;
 use std::env;
 
-use lib::killmail;
+use lib::evetech;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
                 let mut timeout = 10;
                 loop {
                     let response = reqwest::get(&evetech_api).await?;
-                    if let Ok(killmail) = response.json::<killmail::Killmail>().await {
+                    if let Ok(killmail) = response.json::<evetech::Killmail>().await {
                         while let Err(what) =
                             client.post(&zkbinfo_save_api).json(&killmail).send().await
                         {

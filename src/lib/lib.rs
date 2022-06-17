@@ -1,6 +1,6 @@
 
 pub mod api;
-pub mod killmail;
+pub mod evetech;
 pub mod database;
 
 
