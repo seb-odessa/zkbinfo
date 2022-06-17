@@ -222,7 +222,7 @@ pub fn relations(
 pub fn activity(conn: &Connection, id: i32, sbj: QuerySubject) -> anyhow::Result<Vec<RawRelation>> {
     let id_field = QuerySubject::get_field(&sbj);
     let sql = format!(
-        "SELECT strftime('%H', K.killmail_time), count(K.killmail_id)
+        "SELECT cast(strftime('%H', K.killmail_time) AS INTEGER) AS hour, count(K.killmail_id) AS actions
          FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
          WHERE {id_field} = {id} AND killmail_time > date('now', {HISTORY_DEPTH})
          GROUP BY 1;"
