@@ -38,8 +38,6 @@ pub struct Zkb {
 #[cfg(test)]
 mod tests_killmail {
     use super::*;
-    use std::fs::File;
-    use std::io::prelude::*;
 
     #[test]
     fn test_killmail_deserialize() {

@@ -5,7 +5,7 @@ use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection};
 
-use crate::killmail::Killmail;
+use crate::evetech::Killmail;
 
 const HISTORY_DEPTH: &str = "'-30 days'";
 

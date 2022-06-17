@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use crate::database;
-use crate::killmail;
+use crate::evetech;
 use database::QuerySubject;
 use database::RawHistory;
 use database::RelationType;
@@ -322,7 +322,7 @@ pub async fn saved_ids(ctx: Context, date: Param) -> impl Responder {
 /******************************************************************************/
 
 fn save_impl(ctx: Context, json: String) -> anyhow::Result<i32> {
-    let killmail = serde_json::from_str::<killmail::Killmail>(&json)?;
+    let killmail = serde_json::from_str::<evetech::Killmail>(&json)?;
     let id = killmail.killmail_id;
     let pool = ctx.get_pool();
     let conn = pool.get()?;

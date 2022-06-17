@@ -5,7 +5,7 @@ use websockets::{Frame, WebSocket, WebSocketError};
 
 use std::env;
 
-use lib::killmail::Killmail;
+use lib::evetech::Killmail;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
