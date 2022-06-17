@@ -35,79 +35,100 @@ async fn main() -> anyhow::Result<()> {
                     .route("/killmail/ids/{date}/", web::get().to(api::saved_ids))
                     .route(
                         "/character/activity/{id}/",
-                        web::get().to(api::character_activity),
+                        web::get().to(api::character::activity),
                     )
                     .route(
+                        "/corporation/activity/{id}/",
+                        web::get().to(api::corporation::activity),
+                    )
+                    .route(
+                        "/alliance/activity/{id}/",
+                        web::get().to(api::alliance::activity),
+                    )
+                    .route(
+                        "/character/activity/hourly/{id}/",
+                        web::get().to(api::character::activity_hourly),
+                    )
+                    .route(
+                        "/corporation/activity/hourly/{id}/",
+                        web::get().to(api::corporation::activity_hourly),
+                    )
+                    .route(
+                        "/alliance/activity/hourly/{id}/",
+                        web::get().to(api::alliance::activity_hourly),
+                    )
+
+                    .route(
                         "/character/friends/char/{id}/",
-                        web::get().to(api::character_friends_char),
+                        web::get().to(api::character::friends_char),
                     )
                     .route(
                         "/character/enemies/char/{id}/",
-                        web::get().to(api::character_enemies_char),
+                        web::get().to(api::character::enemies_char),
                     )
                     .route(
                         "/character/friends/corp/{id}/",
-                        web::get().to(api::character_friends_corp),
+                        web::get().to(api::character::friends_corp),
                     )
                     .route(
                         "/character/enemies/corp/{id}/",
-                        web::get().to(api::character_enemies_corp),
+                        web::get().to(api::character::enemies_corp),
                     )
                     .route(
                         "/character/friends/alli/{id}/",
-                        web::get().to(api::character_friends_alli),
+                        web::get().to(api::character::friends_alli),
                     )
                     .route(
                         "/character/enemies/alli/{id}/",
-                        web::get().to(api::character_enemies_alli),
+                        web::get().to(api::character::enemies_alli),
                     )
                     .route(
                         "/corporation/friends/char/{id}/",
-                        web::get().to(api::corporation_friends_char),
+                        web::get().to(api::corporation::friends_char),
                     )
                     .route(
                         "/corporation/enemies/char/{id}/",
-                        web::get().to(api::corporation_enemies_char),
+                        web::get().to(api::corporation::enemies_char),
                     )
                     .route(
                         "/corporation/friends/corp/{id}/",
-                        web::get().to(api::corporation_friends_corp),
+                        web::get().to(api::corporation::friends_corp),
                     )
                     .route(
                         "/corporation/enemies/corp/{id}/",
-                        web::get().to(api::corporation_enemies_corp),
+                        web::get().to(api::corporation::enemies_corp),
                     )
                     .route(
                         "/corporation/friends/alli/{id}/",
-                        web::get().to(api::corporation_friends_alli),
+                        web::get().to(api::corporation::friends_alli),
                     )
                     .route(
                         "/corporation/enemies/alli/{id}/",
-                        web::get().to(api::corporation_enemies_alli),
+                        web::get().to(api::corporation::enemies_alli),
                     )
                     .route(
                         "/alliance/friends/char/{id}/",
-                        web::get().to(api::alliance_friends_char),
+                        web::get().to(api::alliance::friends_char),
                     )
                     .route(
                         "/alliance/enemies/char/{id}/",
-                        web::get().to(api::alliance_enemies_char),
+                        web::get().to(api::alliance::enemies_char),
                     )
                     .route(
                         "/alliance/friends/corp/{id}/",
-                        web::get().to(api::alliance_friends_corp),
+                        web::get().to(api::alliance::friends_corp),
                     )
                     .route(
                         "/alliance/enemies/corp/{id}/",
-                        web::get().to(api::alliance_enemies_corp),
+                        web::get().to(api::alliance::enemies_corp),
                     )
                     .route(
                         "/alliance/friends/alli/{id}/",
-                        web::get().to(api::alliance_friends_alli),
+                        web::get().to(api::alliance::friends_alli),
                     )
                     .route(
                         "/alliance/enemies/alli/{id}/",
-                        web::get().to(api::alliance_enemies_alli),
+                        web::get().to(api::alliance::enemies_alli),
                     ),
             )
             .service(web::scope("/killmail").route("/save", web::post().to(api::save)))

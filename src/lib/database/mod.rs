@@ -7,7 +7,58 @@ use rusqlite::{named_params, Connection};
 
 use crate::killmail::Killmail;
 
+const HISTORY_DEPTH: &str = "'-30 days'";
+
 pub type SqlitePool = r2d2::Pool<SqliteConnectionManager>;
+#[derive(Debug, PartialEq)]
+pub enum RelationType {
+    FriendsChar,
+    EnemiesChar,
+    FriendsCorp,
+    EnemiesCorp,
+    FriendsAlli,
+    EnemiesAlli,
+}
+impl RelationType {
+    fn get_field(relation: &RelationType) -> &'static str {
+        match relation {
+            RelationType::FriendsChar => "character_id",
+            RelationType::EnemiesChar => "character_id",
+            RelationType::FriendsCorp => "corporation_id",
+            RelationType::EnemiesCorp => "corporation_id",
+            RelationType::FriendsAlli => "alliance_id",
+            RelationType::EnemiesAlli => "alliance_id",
+        }
+    }
+    fn get_victim_value(relation: &RelationType) -> i16 {
+        match relation {
+            RelationType::FriendsChar => 0,
+            RelationType::EnemiesChar => 1,
+            RelationType::FriendsCorp => 0,
+            RelationType::EnemiesCorp => 1,
+            RelationType::FriendsAlli => 0,
+            RelationType::EnemiesAlli => 1,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum QuerySubject {
+    Character,
+    Corporation,
+    Alliance,
+}
+impl QuerySubject {
+    fn get_field(relation: &Self) -> &'static str {
+        match relation {
+            QuerySubject::Character => "character_id",
+            QuerySubject::Corporation => "corporation_id",
+            QuerySubject::Alliance => "alliance_id",
+        }
+    }
+}
+
+pub type RawRelation = (i32, usize);
 
 pub fn create_pool(url: &str) -> anyhow::Result<SqlitePool> {
     let manager = SqliteConnectionManager::file(url);
@@ -117,11 +168,12 @@ pub struct RawHistory {
     pub solar_system_id: i32,
 }
 
-pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHistory>> {
+pub fn history(conn: &Connection, id: i32, sbj: QuerySubject) -> anyhow::Result<Vec<RawHistory>> {
+    let sbj_field = QuerySubject::get_field(&sbj);
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-             WHERE character_id = {id} AND killmail_time and killmail_time > date('now','-30 days');"
+             WHERE {sbj_field} = {id} AND killmail_time and killmail_time > date('now', {HISTORY_DEPTH});"
         );
 
     let mut stmt = conn.prepare(&sql)?;
@@ -140,74 +192,24 @@ pub fn character_history(conn: &Connection, id: i32) -> anyhow::Result<Vec<RawHi
     Ok(iter.map(|res| res.unwrap()).collect())
 }
 
-#[derive(Debug, PartialEq)]
-pub enum RelationType {
-    FriendsChar,
-    EnemiesChar,
-    FriendsCorp,
-    EnemiesCorp,
-    FriendsAlli,
-    EnemiesAlli,
-}
-impl RelationType {
-    fn get_field(relation: &RelationType) -> &'static str {
-        match relation {
-            RelationType::FriendsChar => "character_id",
-            RelationType::EnemiesChar => "character_id",
-            RelationType::FriendsCorp => "corporation_id",
-            RelationType::EnemiesCorp => "corporation_id",
-            RelationType::FriendsAlli => "alliance_id",
-            RelationType::EnemiesAlli => "alliance_id",
-        }
-    }
-    fn get_victim_value(relation: &RelationType) -> i16 {
-        match relation {
-            RelationType::FriendsChar => 0,
-            RelationType::EnemiesChar => 1,
-            RelationType::FriendsCorp => 0,
-            RelationType::EnemiesCorp => 1,
-            RelationType::FriendsAlli => 0,
-            RelationType::EnemiesAlli => 1,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum RelationSubject {
-    Character,
-    Corporation,
-    Alliance,
-}
-impl RelationSubject {
-    fn get_field(relation: &Self) -> &'static str {
-        match relation {
-            RelationSubject::Character => "character_id",
-            RelationSubject::Corporation => "corporation_id",
-            RelationSubject::Alliance => "alliance_id",
-        }
-    }
-}
-
-pub type RawRelation = (i32, usize);
-
 pub fn relations(
     conn: &Connection,
     id: i32,
-    sbj: RelationSubject,
+    sbj: QuerySubject,
     rel: RelationType,
 ) -> anyhow::Result<Vec<RawRelation>> {
-    let object_field = RelationSubject::get_field(&sbj);
+    let id_field = QuerySubject::get_field(&sbj);
     let relation_field = RelationType::get_field(&rel);
     let victum_value = RelationType::get_victim_value(&rel);
     let sql = format!(
         "WITH RECURSIVE character_killmails(id) AS (
            SELECT K.killmail_id
 	       FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-	       WHERE {object_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now','-30 days')
+	       WHERE {id_field} = {id} AND is_victim = {victum_value} AND killmail_time > date('now', {HISTORY_DEPTH})
         )
         SELECT {relation_field} AS id, count(id) AS times
         FROM character_killmails JOIN participants ON id = killmail_id
-        WHERE {object_field} <> {id}
+        WHERE {id_field} <> {id}
         GROUP BY 1;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| Ok((row.get(0).unwrap_or_default(), row.get(1)?)))?;
@@ -215,4 +217,17 @@ pub fn relations(
         .map(|res| res.unwrap())
         .filter(|(id, _)| *id != 0)
         .collect())
+}
+
+pub fn activity(conn: &Connection, id: i32, sbj: QuerySubject) -> anyhow::Result<Vec<RawRelation>> {
+    let id_field = QuerySubject::get_field(&sbj);
+    let sql = format!(
+        "SELECT strftime('%H', K.killmail_time), count(K.killmail_id)
+         FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
+         WHERE {id_field} = {id} AND killmail_time > date('now', {HISTORY_DEPTH})
+         GROUP BY 1;"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let iter = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(iter.map(|res| res.unwrap()).collect())
 }
