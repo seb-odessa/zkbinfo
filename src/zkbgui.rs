@@ -8,9 +8,10 @@ use handlebars::Handlebars;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-use lib::evetech::SearchResult;
-use lib::evetech::SearchCategory;
+use lib::evetech::Character;
 use lib::evetech::CharacterPortrait;
+use lib::evetech::SearchCategory;
+use lib::evetech::SearchResult;
 
 use std::env;
 
@@ -35,15 +36,13 @@ async fn main() -> anyhow::Result<()> {
             .app_data(context.clone())
             .service(Files::new("/css", "./public/css").show_files_listing())
             .service(Files::new("/js", "./public/js").show_files_listing())
-            .service(character)
+            .service(report)
     })
     .bind((host.as_str(), port))?
     .run()
     .await
     .map_err(|e| anyhow!(e))
 }
-
-
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct Error {
@@ -79,10 +78,18 @@ fn wrapper<T: Serialize>(ctx: Context<'_>, template: &str, obj: &T) -> String {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct CharacterProps {
     id: i32,
     name: String,
+    gender: String,
+    birthday: String,
+    security_status: f32,
+
+    // pub corporation_id: i32,
+    // pub alliance_id: Option<i32>,
+    // pub faction_id: Option<i32>,
+
     img_64x64: String,
     img_128x128: String,
     img_256x256: String,
@@ -93,10 +100,15 @@ impl CharacterProps {
             .await?
             .get_character_id()?;
 
+        let character = Character::from(id).await?;
         let portrait = CharacterPortrait::from(id).await?;
         Ok(Self {
             id,
-            name,
+            name: character.name,
+            gender: character.gender,
+            birthday: character.birthday,
+            security_status: character.security_status,
+
             img_64x64: portrait.px64x64,
             img_128x128: portrait.px128x128,
             img_256x256: portrait.px256x256,
@@ -105,7 +117,7 @@ impl CharacterProps {
 }
 
 #[get("/gui/character/{name}/")]
-async fn character(ctx: Context<'_>, name: web::Path<String>) -> HttpResponse {
+async fn report(ctx: Context<'_>, name: web::Path<String>) -> HttpResponse {
     let body = match CharacterProps::from(name.into_inner()).await {
         Ok(prop) => wrapper(ctx, "character", &prop),
         Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
