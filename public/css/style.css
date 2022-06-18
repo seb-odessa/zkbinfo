@@ -1,0 +1,17 @@
+body {
+  background-color: rgb(15, 41, 49);
+  color: rgb(206, 185, 185);
+}
+
+h1 {
+  color: rgb(139, 96, 96);
+}
+
+p {
+  font-family: verdana;
+  font-size: 20px;
+}
+
+a {
+  color: hotpink;
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{name}} Info</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <script src="../js/script.js"></script>
+
+    <div id="header">
+        <h2>{{name}}</h2>
+        <img src="{{{img_128x128}}}" alt="128x128" width="128" height="128">
+        <a href="https://evewho.com/character/{{id}}">evewho</a>
+        <a href="https://zkillboard.com/character/{{id}}/">zkillboard.com</a>
+    </div>
+
+
+    <div id="main">
+        <p> Character Id: {{id}}</p>
+    </div>
+
+    <p> <img src="{{{img_64x64}}}" alt=" 64x64" width="64" height="64"></p>
+    <p> <img src="{{{img_256x256}}}" alt="256x256" width="256" height="256"></p>
+
+    <p>This is an example of how to use {{name}} with Actix-Web.</p>
+    <p id="demo">JavaScript can change HTML content.</p>
+</body>
+
+</html>
