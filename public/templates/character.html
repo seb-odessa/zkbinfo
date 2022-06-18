@@ -59,14 +59,14 @@
     <div class="activity">
         <div id="activity" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
+            fetch("http://localhost:8080/api/character/activity/{{character_id}}/")
                 .then(response => response.json())
                 .then(json => document.getElementById("activity").innerHTML =
                     "<p>Activity last 14 days:<p>" +
                     "<p>Wins:" + json.wins.killmails.length + "<p>" +
-                    // "<p>Total damage dealt:" + json.wins.total_damage + "<p>" +
-                    // "<p>Systems with most activities:" + json.wins.solar_systems.join(' ') + "<p>" +
-                    // "<p>Favorite ships:" + json.wins.ships.join(' ') + "<p>" +
+                    "<p>Total damage dealt:" + json.wins.total_damage + "<p>" +
+                    "<p>Systems with most activities:" + json.wins.solar_systems.keys() + "<p>" +
+                    "<p>Favorite ships:" + json.wins.ships + "<p>" +
                     ""
                 )
                 .catch((err) => console.log("Can’t access: " + err));

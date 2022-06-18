@@ -1,9 +1,11 @@
+use actix_cors::Cors;
 use actix_rt;
+use actix_web::http::header;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use anyhow::anyhow;
 use env_logger;
-use log::{info, error};
+use log::{error, info};
 use tokio::time::Duration;
 
 use std::env;
@@ -30,11 +32,11 @@ async fn main() -> anyhow::Result<()> {
     let context = web::Data::new(state);
 
     actix_rt::spawn(async move {
-        let mut interval = actix_rt::time::interval(Duration::from_secs(60*60*1));
+        let mut interval = actix_rt::time::interval(Duration::from_secs(60 * 60 * 1));
         loop {
             interval.tick().await;
             if let Ok(conn) = cleanup.get() {
-                if let Err(what) =  database::cleanup(&conn) {
+                if let Err(what) = database::cleanup(&conn) {
                     error!("{what}");
                 } else {
                     info!("Cleanup performed");
@@ -46,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
     info!("Launching server at {host}:{port}");
     HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::permissive() //TODO Rwconfigure due to unsafe
+            )
             .app_data(context.clone())
             .service(
                 web::scope("/api")
