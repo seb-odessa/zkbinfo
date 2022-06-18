@@ -95,11 +95,6 @@ pub struct Status {
     message: String,
 }
 impl Status {
-    pub fn ok() -> Self {
-        Self {
-            message: String::from("Success"),
-        }
-    }
     pub fn from<T: Into<String>>(message: T) -> Self {
         Self {
             message: message.into(),
@@ -336,7 +331,7 @@ pub async fn save(ctx: Context, json: String) -> impl Responder {
     match save_impl(ctx, json) {
         Ok(id) => {
             info!("killmail {} saved in the database", id);
-            Status::ok()
+            Status::from(format!("Success"))
         }
         Err(what) => {
             error!("Failed to select ids from DB: {what}");

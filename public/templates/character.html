@@ -14,29 +14,64 @@
             <img src="{{{img_128x128}}}" alt="128x128" width="128" height="128">
         </div>
         <div class="info">
-            Character Name: {{character_name}}
-            <a href="https://evewho.com/character/{{character_id}}">evewho</a>
-            <a href="https://zkillboard.com/character/{{character_id}}/">zkillboard.com</a>
-            <br> Corporation Name: {{corporation_name}} [{{corporation_ticker}}] ({{corporation_members}})
-            <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
-            <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
-            <br> Character Gender: {{character_gender}}
-            <br> Birthday: {{character_birthday}}
-            <br> Security Status: {{character_security_status}}
+            <div id="character">
+                Character Name: {{character_name}}
+                <a href="https://evewho.com/character/{{character_id}}">evewho</a>
+                <a href="https://zkillboard.com/character/{{character_id}}/">zkillboard.com</a>
+            </div>
+            <div id="corporation">
+                Corporation Name:
+                <div id="{{corporation_id}}" div style="display: inline">...</div>
+                <script>
+                    fetch("https://esi.evetech.net/latest/corporations/{{corporation_id}}/?datasource=tranquility")
+                        .then(response => response.json())
+                        .then(json => document.getElementById("{{corporation_id}}").innerHTML =
+                            json.name + " [" + json.ticker + "] (" + json.member_count + ")"
+                        )
+                        .catch((err) => console.log("Can’t access: " + err));
+                </script>
+                <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
+                <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
+            </div>
+            {{#if alliance_id}}
+            <div id="aliance">
+                Alliance Name:
+                <div id="{{alliance_id}}" div style="display: inline">...</div>
+                <script>
+                    fetch("https://esi.evetech.net/latest/alliances/{{alliance_id}}/?datasource=tranquility")
+                        .then(response => response.json())
+                        .then(json => document.getElementById("{{alliance_id}}").innerHTML =
+                            json.name + " [" + json.ticker + "]"
+                        )
+                        .catch((err) => console.log("Can’t access: " + err));
+                </script>
+                <a href="https://evewho.com/alliance/{{alliance_id}}">evewho</a>
+                <a href="https://zkillboard.com/alliance/{{alliance_id}}/">zkillboard.com</a>
+            </div>
+            {{/if}}
+            <div id="details">
+                <p>Character Gender: {{character_gender}}</p>
+                <p>Birthday: {{character_birthday}}</p>
+                <p>Security Status: {{character_security_status}}</p>
+            </div>
         </div>
     </div>
-    <div class="content">
-        <p>This is an example of how to use '{{character_name}}' with Actix-Web.</p>
-        <p id="demo">JavaScript can change HTML content.</p>
+    <div class="activity">
+        <div id="activity" div style="display: inline">...</div>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
+                .then(response => response.json())
+                .then(json => document.getElementById("activity").innerHTML =
+                    "<p>Activity last 14 days:<p>" +
+                    "<p>Wins:" + json.wins.killmails.length + "<p>" +
+                    // "<p>Total damage dealt:" + json.wins.total_damage + "<p>" +
+                    // "<p>Systems with most activities:" + json.wins.solar_systems.join(' ') + "<p>" +
+                    // "<p>Favorite ships:" + json.wins.ships.join(' ') + "<p>" +
+                    ""
+                )
+                .catch((err) => console.log("Can’t access: " + err));
+        </script>
     </div>
-
-
-
-    <!--
-    <p> <img src="{{{img_64x64}}}" alt=" 64x64" width="64" height="64"></p>
-    <p> <img src="{{{img_256x256}}}" alt="256x256" width="256" height="256"></p>
-    -->
-
 </body>
 
 </html>
