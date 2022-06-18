@@ -7,11 +7,13 @@ pub const EVE_TECH_SERVER: &str = "datasource=tranquility";
 pub const EVE_TECH_SEARCH: &str = "language=en&strict=true";
 
 mod character;
+mod corporation;
 mod killmail;
 mod portrait;
 mod search;
 
 pub use character::Character;
+pub use corporation::Corporation;
 pub use killmail::Killmail;
 pub use portrait::CharacterPortrait;
 pub use search::SearchCategory;
