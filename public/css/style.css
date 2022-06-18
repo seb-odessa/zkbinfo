@@ -3,6 +3,11 @@ body {
     color: rgb(206, 185, 185);
 }
 
+p {
+    padding: 0%;
+    margin-block: auto;
+}
+
 .content {
     overflow: auto;
     /* border: 1px solid #999999; */
