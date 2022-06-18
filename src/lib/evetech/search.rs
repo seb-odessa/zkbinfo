@@ -59,7 +59,7 @@ impl SearchResult {
     }
 
     pub fn get_character_id(&self) -> anyhow::Result<i32> {
-        self.character
+        self.constellation
             .iter()
             .next()
             .and_then(|ids| ids.iter().next())
