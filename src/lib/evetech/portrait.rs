@@ -18,3 +18,20 @@ impl CharacterPortrait {
             .map_err(|e| anyhow!(e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn from() {
+        let maybe_obj = CharacterPortrait::from(2114350216).await;
+        assert!(maybe_obj.is_ok());
+        let obj = maybe_obj.unwrap();
+        assert_eq!(obj.px64x64, String::from("https://images.evetech.net/characters/2114350216/portrait?tenant=tranquility&size=64"));
+        assert_eq!(obj.px128x128, String::from("https://images.evetech.net/characters/2114350216/portrait?tenant=tranquility&size=128"));
+        assert_eq!(obj.px256x256, String::from("https://images.evetech.net/characters/2114350216/portrait?tenant=tranquility&size=256"));
+        assert_eq!(obj.px512x512, String::from("https://images.evetech.net/characters/2114350216/portrait?tenant=tranquility&size=512"));
+
+    }
+}
