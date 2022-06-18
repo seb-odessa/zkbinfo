@@ -67,3 +67,38 @@ impl SearchResult {
             .ok_or(anyhow!("Character was not found"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn from() -> Result<(), String> {
+        let name = String::from("Seb Odessa");
+        let search = SearchResult::from(&name, SearchCategory::Character)
+            .await
+            .map_err(|e| format!("{e}"))?;
+        let ids = search
+            .character
+            .ok_or("The SearchResult::charater is None")?;
+        let id = ids
+            .into_iter()
+            .next()
+            .ok_or("The SearchResult::charater is empty")?;
+        assert_eq!(2114350216, id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_character_id() -> Result<(), String> {
+        let name = String::from("Seb Odessa");
+        let search = SearchResult::from(&name, SearchCategory::Character)
+            .await
+            .map_err(|e| format!("{e}"))?;
+
+        let id = search.get_character_id().map_err(|e| format!("{e}"))?;
+
+        assert_eq!(2114350216, id);
+        Ok(())
+    }
+}
