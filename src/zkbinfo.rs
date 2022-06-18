@@ -13,13 +13,14 @@ use lib::database;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
     let host = env::var("ZKBINFO_HOST").unwrap_or(String::from("localhost"));
     let port = env::var("ZKBINFO_PORT")
         .unwrap_or_default()
         .parse::<u16>()
         .unwrap_or(8080);
 
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     let url = "killmail.db";
     info!("The Database path: {url}");
     let pool = database::create_pool(&url)?;

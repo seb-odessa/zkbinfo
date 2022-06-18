@@ -1,127 +1,49 @@
 #[macro_use]
 extern crate actix_web;
 
-extern crate serde_json;
-
+use actix_files::Files;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use anyhow::anyhow;
 use handlebars::Handlebars;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
+use lib::evetech::SearchResult;
+use lib::evetech::SearchCategory;
+use lib::evetech::CharacterPortrait;
+
+use std::env;
+
 pub type Context<'a> = web::Data<Handlebars<'a>>;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    let host = env::var("ZKBGUI_HOST").unwrap_or(String::from("localhost"));
+    let port = env::var("ZKBGUI_PORT")
+        .unwrap_or_default()
+        .parse::<u16>()
+        .unwrap_or(8088);
 
     let mut handlebars = Handlebars::new();
-    handlebars
-        .register_templates_directory(".html", "./templates")
-        .unwrap();
-    let handlebars_ref = web::Data::new(handlebars);
+    handlebars.register_templates_directory(".html", "./public/templates")?;
+    let context = web::Data::new(handlebars);
 
+    info!("Try http://{host}:{port}/");
     HttpServer::new(move || {
         App::new()
-            .app_data(handlebars_ref.clone())
+            .app_data(context.clone())
+            .service(Files::new("/css", "./public/css").show_files_listing())
+            .service(Files::new("/js", "./public/js").show_files_listing())
             .service(character)
     })
-    .bind("localhost:8088")?
+    .bind((host.as_str(), port))?
     .run()
     .await
     .map_err(|e| anyhow!(e))
 }
 
-const EVE_TECH_ROOT: &str = "https://esi.evetech.net/latest";
-const EVE_TECH_SERVER: &str = "datasource=tranquility";
-const EVE_TECH_SEARCH: &str = "language=en&strict=true";
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
-enum SearchCategory {
-    Agent,
-    Alliance,
-    Character,
-    Constellation,
-    Corporation,
-    Faction,
-    InventoryType,
-    Region,
-    SolarSystem,
-    Station,
-}
-impl SearchCategory {
-    pub fn category(category: SearchCategory) -> &'static str {
-        match category {
-            SearchCategory::Agent => "categories=agent",
-            SearchCategory::Alliance => "categories=alliance",
-            SearchCategory::Character => "categories=character",
-            SearchCategory::Constellation => "categories=constellation",
-            SearchCategory::Corporation => "categories=corporation",
-            SearchCategory::Faction => "categories=faction",
-            SearchCategory::InventoryType => "categories=inventory_type",
-            SearchCategory::Region => "categories=region",
-            SearchCategory::SolarSystem => "categories=solar_system",
-            SearchCategory::Station => "categories=station",
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
-struct SearchResult {
-    agent: Option<Vec<i32>>,
-    alliance: Option<Vec<i32>>,
-    character: Option<Vec<i32>>,
-    constellation: Option<Vec<i32>>,
-    corporation: Option<Vec<i32>>,
-    faction: Option<Vec<i32>>,
-    inventory_type: Option<Vec<i32>>,
-    region: Option<Vec<i32>>,
-    solar_system: Option<Vec<i32>>,
-    station: Option<Vec<i32>>,
-}
-impl SearchResult {
-    pub async fn from(name: &String, category: SearchCategory) -> anyhow::Result<Self> {
-        let name = urlencoding::encode(name);
-        let category = SearchCategory::category(category);
-        let url = format!(
-            "{EVE_TECH_ROOT}/search/?{category}&{EVE_TECH_SERVER}&{EVE_TECH_SEARCH}&search={name}"
-        );
-        info!("{url}");
-        reqwest::get(&url)
-            .await?
-            .json::<Self>()
-            .await
-            .map_err(|e| anyhow!(e))
-    }
-
-    pub fn get_character_id(&self) -> anyhow::Result<i32> {
-        self.character
-            .iter()
-            .next()
-            .and_then(|ids| ids.iter().next())
-            .and_then(|id| Some(*id))
-            .ok_or(anyhow!("Character was not found"))
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
-struct CharacterPortrait {
-    px128x128: String,
-    px256x256: String,
-    px512x512: String,
-    px64x64: String,
-}
-impl CharacterPortrait {
-    pub async fn from(id: i32) -> anyhow::Result<Self> {
-        let url = format!("{EVE_TECH_ROOT}/characters/{id}/portrait/?{EVE_TECH_SERVER}");
-        info!("{url}");
-        reqwest::get(&url)
-            .await?
-            .json::<Self>()
-            .await
-            .map_err(|e| anyhow!(e))
-    }
-}
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct Error {
@@ -164,22 +86,20 @@ struct CharacterProps {
     img_64x64: String,
     img_128x128: String,
     img_256x256: String,
-
 }
 impl CharacterProps {
     pub async fn from(name: String) -> anyhow::Result<Self> {
         let id = SearchResult::from(&name, SearchCategory::Character)
-                    .await?
-                    .get_character_id()?;
+            .await?
+            .get_character_id()?;
 
         let portrait = CharacterPortrait::from(id).await?;
-        Ok(Self{
+        Ok(Self {
             id,
             name,
             img_64x64: portrait.px64x64,
             img_128x128: portrait.px128x128,
             img_256x256: portrait.px256x256,
-
         })
     }
 }
