@@ -1,17 +1,39 @@
 body {
-  background-color: rgb(15, 41, 49);
-  color: rgb(206, 185, 185);
+    background-color: rgb(15, 41, 49);
+    color: rgb(206, 185, 185);
 }
 
-h1 {
-  color: rgb(139, 96, 96);
+.content {
+    overflow: auto;
+    /* border: 1px solid #999999; */
 }
 
-p {
-  font-family: verdana;
-  font-size: 20px;
+.content div {
+    padding: 5px;
+    /* border: 1px solid #999999; */
 }
 
-a {
-  color: hotpink;
+.content a {
+    color: hotpink;
+}
+
+.portrait {
+    float: left;
+    width: 128px;
+    /* background: #1c87c9; */
+    /* border: 1px solid #999999; */
+}
+
+.info {
+    float: left;
+    /* border: 1px solid #999999; */
+    /* background: #8ebf42; */
+}
+
+.shadowbox {
+    width: 15em;
+    border: 1px solid #333;
+    box-shadow: 8px 8px 5px #444;
+    padding: 8px 12px;
+    background-image: linear-gradient(180deg, #fff, #ddd 40%, #ccc);
 }

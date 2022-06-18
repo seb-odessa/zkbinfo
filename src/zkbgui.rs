@@ -7,8 +7,10 @@ use anyhow::anyhow;
 use handlebars::Handlebars;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
+use chrono::NaiveDateTime;
 
 use lib::evetech::Character;
+use lib::evetech::Corporation;
 use lib::evetech::CharacterPortrait;
 use lib::evetech::SearchCategory;
 use lib::evetech::SearchResult;
@@ -80,13 +82,18 @@ fn wrapper<T: Serialize>(ctx: Context<'_>, template: &str, obj: &T) -> String {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct CharacterProps {
-    id: i32,
-    name: String,
-    gender: String,
-    birthday: String,
-    security_status: f32,
+    character_id: i32,
+    character_name: String,
+    character_gender: String,
+    character_birthday: String,
+    character_security_status: String,
 
-    // pub corporation_id: i32,
+    corporation_id: i32,
+    corporation_name: String,
+    corporation_ticker: String,
+    corporation_members: i32,
+
+
     // pub alliance_id: Option<i32>,
     // pub faction_id: Option<i32>,
 
@@ -101,13 +108,22 @@ impl CharacterProps {
             .get_character_id()?;
 
         let character = Character::from(id).await?;
+        let corporation = Corporation::from(character.corporation_id).await?;
         let portrait = CharacterPortrait::from(id).await?;
+        let parse_date = NaiveDateTime::parse_from_str;
+        let birthday = parse_date(&character.birthday, "%Y-%m-%dT%H:%M:%SZ")?;
+
         Ok(Self {
-            id,
-            name: character.name,
-            gender: character.gender,
-            birthday: character.birthday,
-            security_status: character.security_status,
+            character_id: id,
+            character_name: character.name,
+            character_gender: character.gender,
+            character_birthday: birthday.format("%Y-%m-%d %H:%M:%S").to_string(),
+            character_security_status: format!("{:.2}", character.security_status),
+
+            corporation_id: character.corporation_id,
+            corporation_name: corporation.name,
+            corporation_ticker: corporation.ticker,
+            corporation_members: corporation.member_count,
 
             img_64x64: portrait.px64x64,
             img_128x128: portrait.px128x128,
