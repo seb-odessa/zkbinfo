@@ -7,7 +7,8 @@
 </head>
 
 <body>
-    <script src="../js/script.js"></script>
+    <script type="text/javascript" src="/js/script.js"></script>
+
 
     <div class="content">
         <div class="portrait">
@@ -53,20 +54,31 @@
                 <p>Character Gender: {{character_gender}}</p>
                 <p>Birthday: {{character_birthday}}</p>
                 <p>Security Status: {{character_security_status}}</p>
+                <p>
+                    <div id="demo" div style="display: inline">...</div>
+                </p>
+                <script>
+                    const url = "http://zkbinfo:8080/api/character/activity/{{character_id}}/";
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(activities => document.getElementById("demo").innerHTML = format(activities))
+                        .catch((err) => console.log("Can’t access: " + err));
+                </script>
+
             </div>
         </div>
     </div>
     <div class="activity">
         <div id="activity" div style="display: inline">...</div>
         <script>
-            fetch("http://localhost:8080/api/character/activity/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
                 .then(response => response.json())
-                .then(json => document.getElementById("activity").innerHTML =
+                .then(activities => document.getElementById("activity").innerHTML =
                     "<p>Activity last 14 days:<p>" +
-                    "<p>Wins:" + json.wins.killmails.length + "<p>" +
-                    "<p>Total damage dealt:" + json.wins.total_damage + "<p>" +
-                    "<p>Systems with most activities:" + json.wins.solar_systems.keys() + "<p>" +
-                    "<p>Favorite ships:" + json.wins.ships + "<p>" +
+                    "<p>Wins: " + activities.wins.killmails.length + "<p>" +
+                    "<p>Total damage dealt: " + activities.wins.total_damage + "<p>" +
+                    "<p>Systems with most activities: " + most_active_systems(activities.wins.solar_systems) + "<p>" +
+                    "<p>Favorite ships: " + most_active_ships(activities.wins.ships, 5) + "<p>" +
                     ""
                 )
                 .catch((err) => console.log("Can’t access: " + err));
