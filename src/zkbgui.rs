@@ -2,8 +2,7 @@
 extern crate handlebars;
 
 use actix_files::Files;
-use actix_web::get;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{get, web, App, HttpResponse, HttpServer};
 use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use handlebars::Handlebars;
@@ -52,6 +51,7 @@ async fn main() -> anyhow::Result<()> {
     .await
     .map_err(|e| anyhow!(e))
 }
+
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct Error {
