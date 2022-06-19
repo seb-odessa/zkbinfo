@@ -28,26 +28,24 @@ function most_active(obj, count) {
     return map;
 }
 
+function make_damage(damage) {
+    return "<p>Total damage: " + damage + "</p>";
+}
+
+function make_items(msg, prefix, map) {
+    let html = [];
+    html.push(`<div>${msg}: `)
+    map.forEach((count, id) => {
+        html.push(`<div id="${prefix}_${id}" div style="display: inline">*</div> `);
+    });
+    html.push("</div>");
+    return html.join("");
+}
+
 function format(prefix, systems, ships, damage) {
     let html = [];
-    // html.push("<p>(" + report.killmails.length + "): ");
-    // for (let i = 0; i < report.killmails.length; i++) {
-    //     const id = report.killmails[i];
-    //     html.push(`<a href="https://zkillboard.com/kill/${id}/">${id}</a> `);
-    // }
-    // html.push("</p>");
-    html.push("<p>Total damage: " + damage + "</p>");
-    html.push("<div>Systems with most activities: ")
-    systems.forEach((count, system_id) => {
-        html.push(`<div id="${prefix}_${system_id}" div style="display: inline">*</div> `);
-    });
-    html.push("</div>");
-
-    html.push("<div>Favorite ships: ");
-    ships.forEach((count, ship_id) => {
-        html.push(`<div id="${prefix}_${ship_id}" div style="display: inline">*</div> `);
-    });
-    html.push("</div>");
-
+    html.push(make_damage(damage));
+    html.push(make_items("Systems with most activities", prefix, systems));
+    html.push(make_items("Favorite ships", prefix, ships));
     return html.join("");
 }

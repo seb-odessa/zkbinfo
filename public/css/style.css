@@ -1,6 +1,6 @@
 body {
     background-color: rgb(15, 41, 49);
-    color: rgb(206, 185, 185);
+    color: rgb(240, 234, 234);
 }
 
 p {
@@ -9,7 +9,15 @@ p {
 }
 
 .activity a {
-    color: hotpink;
+    color: rgb(250, 183, 216);
+}
+
+.friends a {
+    color: rgb(250, 183, 216);
+}
+
+.enemies a {
+    color: rgb(250, 183, 216);
 }
 
 .content {
@@ -18,7 +26,7 @@ p {
 }
 
 .content a {
-    color: hotpink;
+    color: rgb(250, 183, 216);
 }
 
 .content div {
