@@ -58,12 +58,78 @@
     <div class="activity">
         <div>
             <p>Activity last 14 days:</p>
-            <div id="activity" div style="display: inline">...</div>
+            <div id="wins_head" div style="display: inline">...</div>
+            <div id="wins" div style="display: inline">...</div>
+            <br>
+            <div id="losses_head" div style="display: inline">...</div>
+            <div id="losses" div style="display: inline">...</div>
             <script>
                 const url = "http://zkbinfo:8080/api/character/activity/{{character_id}}/";
                 fetch(url)
                     .then(response => response.json())
-                    .then(activities => document.getElementById("activity").innerHTML = format(activities))
+                    .then(activities => {
+                        const wins_prefix = "win";
+                        const wins_damage = activities.wins.total_damage;
+                        const wins_solar_systems = most_active(activities.wins.solar_systems, 7);
+                        const wins_ships = most_active(activities.wins.ships, 7);
+
+                        const losses_prefix = "loss";
+                        const losses_damage = activities.losses.total_damage;
+                        const losses_solar_systems = most_active(activities.losses.solar_systems, 7);
+                        const losses_ships = most_active(activities.losses.ships, 7);
+
+                        document.getElementById("wins_head").innerHTML = "<p>Wins: " + activities.wins.killmails.length + "</p>";
+                        document.getElementById("wins").innerHTML = format(wins_prefix, wins_solar_systems, wins_ships, wins_damage);
+                        document.getElementById("losses_head").innerHTML = "<p>Losses: " + activities.losses.killmails.length + "</p>";
+                        document.getElementById("losses").innerHTML = format(losses_prefix, losses_solar_systems, losses_ships, losses_damage);
+
+                        requestNamesAsync(Array.from(wins_solar_systems.keys()))
+                            .then(names => {
+                                names.forEach((obj) => {
+                                    const id = obj.id;
+                                    const name = obj.name;
+                                    const count = wins_solar_systems.get(`${id}`);
+                                    const href = `<a href="https://zkillboard.com/system/${id}/">${name} (${count})</a>`;
+                                    const element = `${wins_prefix}_${id}`;
+                                    document.getElementById(element).innerHTML = href;
+                                });
+                            });
+
+                        requestNamesAsync(Array.from(wins_ships.keys()))
+                            .then(names => {
+                                names.forEach((obj) => {
+                                    const id = obj.id;
+                                    const name = obj.name;
+                                    const count = wins_ships.get(`${id}`);
+                                    const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                    const element = `${wins_prefix}_${id}`;
+                                    document.getElementById(element).innerHTML = href;
+                                });
+                            });
+                        requestNamesAsync(Array.from(losses_solar_systems.keys()))
+                            .then(names => {
+                                names.forEach((obj) => {
+                                    const id = obj.id;
+                                    const name = obj.name;
+                                    const count = losses_solar_systems.get(`${id}`);
+                                    const href = `<a href="https://zkillboard.com/system/${id}/">${name} (${count})</a>`;
+                                    const element = `${losses_prefix}_${id}`;
+                                    document.getElementById(element).innerHTML = href;
+                                });
+                            });
+
+                        requestNamesAsync(Array.from(losses_ships.keys()))
+                            .then(names => {
+                                names.forEach((obj) => {
+                                    const id = obj.id;
+                                    const name = obj.name;
+                                    const count = losses_ships.get(`${id}`);
+                                    const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                    const element = `${losses_prefix}_${id}`;
+                                    document.getElementById(element).innerHTML = href;
+                                });
+                            });
+                    })
                     .catch((err) => console.log("Can't access: " + err));
             </script>
         </div>
