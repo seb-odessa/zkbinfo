@@ -344,6 +344,7 @@ pub async fn save(ctx: Context, json: String) -> impl Responder {
 #[derive(Debug, Serialize, Clone, Default)]
 pub struct Wins {
     // killmails: Vec<i32>,
+    total_count: i32,
     total_damage: i32,
     ships: HashMap<i32, usize>,
     solar_systems: HashMap<i32, usize>,
@@ -352,6 +353,7 @@ pub struct Wins {
 #[derive(Debug, Serialize, Clone, Default)]
 pub struct Losses {
     // killmails: Vec<i32>,
+    total_count: i32,
     total_damage: i32,
     ships: HashMap<i32, usize>,
     solar_systems: HashMap<i32, usize>,
@@ -371,6 +373,7 @@ impl Activity {
         // report.losses.killmails.reserve(rows.len());
         for row in rows {
             if row.is_victim {
+                report.losses.total_count += 1;
                 // report.losses.killmails.push(row.killmail_id);
                 report.losses.total_damage += row.damage;
                 *report
@@ -382,6 +385,7 @@ impl Activity {
                     *report.losses.ships.entry(id).or_insert(0) += 1;
                 }
             } else {
+                report.wins.total_count += 1;
                 // report.wins.killmails.push(row.killmail_id);
                 report.wins.total_damage += row.damage;
                 *report
