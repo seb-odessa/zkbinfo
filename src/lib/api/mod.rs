@@ -343,7 +343,7 @@ pub async fn save(ctx: Context, json: String) -> impl Responder {
 /******************************************************************************/
 #[derive(Debug, Serialize, Clone, Default)]
 pub struct Wins {
-    killmails: Vec<i32>,
+    // killmails: Vec<i32>,
     total_damage: i32,
     ships: HashMap<i32, usize>,
     solar_systems: HashMap<i32, usize>,
@@ -351,7 +351,7 @@ pub struct Wins {
 
 #[derive(Debug, Serialize, Clone, Default)]
 pub struct Losses {
-    killmails: Vec<i32>,
+    // killmails: Vec<i32>,
     total_damage: i32,
     ships: HashMap<i32, usize>,
     solar_systems: HashMap<i32, usize>,
@@ -367,11 +367,11 @@ impl Activity {
     pub fn from(id: i32, rows: Vec<RawHistory>) -> Self {
         let mut report = Activity::default();
         report.id = id;
-        report.wins.killmails.reserve(rows.len());
-        report.losses.killmails.reserve(rows.len());
+        // report.wins.killmails.reserve(rows.len());
+        // report.losses.killmails.reserve(rows.len());
         for row in rows {
             if row.is_victim {
-                report.losses.killmails.push(row.killmail_id);
+                // report.losses.killmails.push(row.killmail_id);
                 report.losses.total_damage += row.damage;
                 *report
                     .losses
@@ -382,7 +382,7 @@ impl Activity {
                     *report.losses.ships.entry(id).or_insert(0) += 1;
                 }
             } else {
-                report.wins.killmails.push(row.killmail_id);
+                // report.wins.killmails.push(row.killmail_id);
                 report.wins.total_damage += row.damage;
                 *report
                     .wins
