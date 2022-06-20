@@ -2,7 +2,8 @@
 extern crate handlebars;
 
 use actix_files::Files;
-use actix_web::{get, web, App, HttpResponse, HttpServer};
+use actix_files::NamedFile;
+use actix_web::{get, web, App, Responder, HttpResponse, HttpServer};
 use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use handlebars::Handlebars;
@@ -13,10 +14,6 @@ use lib::evetech::Character;
 use lib::evetech::CharacterPortrait;
 use lib::evetech::SearchCategory;
 use lib::evetech::SearchResult;
-
-// use lib::api::Wins;
-// use lib::api::Losses;
-// use lib::api::Activity;
 
 use std::env;
 
@@ -44,6 +41,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(context.clone())
             .service(Files::new("/css", "./public/css").show_files_listing())
             .service(Files::new("/js", "./public/js").show_files_listing())
+            .service(favicon)
             .service(report)
     })
     .bind((host.as_str(), port))?
@@ -52,18 +50,19 @@ async fn main() -> anyhow::Result<()> {
     .map_err(|e| anyhow!(e))
 }
 
+#[get("/favicon.ico")]
+async fn favicon() -> impl Responder {
+    NamedFile::open_async("./public/favicon.ico").await
+}
+
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct Error {
-    status_code: i32,
     error: String,
 }
 impl Error {
     pub fn from(error: String) -> Self {
-        Error {
-            status_code: 0,
-            error,
-        }
+        Error { error }
     }
 }
 
@@ -73,7 +72,6 @@ fn wrapper<T: Serialize>(ctx: Context<'_>, template: &str, obj: &T) -> String {
         Err(what) => {
             error!("{what}");
             let error = Error {
-                status_code: 0,
                 error: format!("{what}"),
             };
             match ctx.render("error", &error) {
@@ -113,7 +111,7 @@ impl CharacterProps {
         let parse_date = NaiveDateTime::parse_from_str;
         let birthday = parse_date(&character.birthday, "%Y-%m-%dT%H:%M:%SZ")?;
 
-        let props = Self {
+        Ok(Self {
             character_id: id,
             character_name: character.name,
             character_gender: character.gender,
@@ -127,17 +125,19 @@ impl CharacterProps {
             img_64x64: portrait.px64x64,
             img_128x128: portrait.px128x128,
             img_256x256: portrait.px256x256,
-        };
-
-        Ok(props)
+        })
     }
 }
 
-#[get("/gui/character/{name}/")]
-async fn report(ctx: Context<'_>, name: web::Path<String>) -> HttpResponse {
-    let body = match CharacterProps::from(name.into_inner()).await {
-        Ok(prop) => wrapper(ctx, "character", &prop),
-        Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+#[get("/gui/{target}/{name}/")]
+async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResponse {
+    let (target, name) = path.into_inner();
+    let body = match target.as_str() {
+        "character" => match CharacterProps::from(name).await {
+            Ok(prop) => wrapper(ctx, "character", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
+        _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),
     };
     HttpResponse::Ok().body(body)
 }
