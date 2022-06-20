@@ -63,7 +63,7 @@ async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResp
             Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
         },
         "corporation" => match CorporationProps::from(name).await {
-            Ok(prop) => wrapper(ctx, "demo", &prop),
+            Ok(prop) => wrapper(ctx, "corporation", &prop),
             Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
         },
         _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),

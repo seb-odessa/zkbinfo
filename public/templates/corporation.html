@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{character_name}} Info</title>
+    <title>{{corporation_name}} Info</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 
@@ -12,25 +12,17 @@
 
     <div class="content">
         <div class="portrait">
-            <img src="{{{img_128x128}}}" alt="128x128" width="128" height="128">
+            <img src="{{{corporation_icon}}}" alt="128x128" width="128" height="128">
         </div>
         <div class="info">
             <div id="character">
-                Character Name: {{character_name}}
-                <a href="https://evewho.com/character/{{character_id}}">evewho</a>
-                <a href="https://zkillboard.com/character/{{character_id}}/">zkillboard.com</a>
-            </div>
-            <div id="corporation">
-                Corporation Name:
-                <div id="{{corporation_id}}" div style="display: inline">...</div>
-                <script>
-                    fetch("https://esi.evetech.net/latest/corporations/{{corporation_id}}/?datasource=tranquility")
-                        .then(response => response.json())
-                        .then(json => document.getElementById("{{corporation_id}}").innerHTML =
-                            json.name + " [" + json.ticker + "] (" + json.member_count + ")"
-                        )
-                        .catch((err) => console.log("Can't access: " + err));
-                </script>
+                Character Name: {{corporation_name}} [{{corporation_ticker}}] ({{corporation_member_count}})
+                <!-- -->
+                {{#if alliance_id}}
+                <a href="{{{corporation_url}}}">homepage</a>
+                <!-- -->
+                {{/if}}
+                <!-- -->
                 <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
                 <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
             </div>
@@ -51,12 +43,20 @@
             </div>
             {{/if}}
             <div id="details">
-                <p>Character Gender: {{character_gender}}</p>
-                <p>Birthday: {{character_birthday}}</p>
-                <p>Security Status: {{character_security_status}}</p>
+                <p>CEO: {{corporation_ceo_id}}</p>
+                <p>Creator: {{corporation_creator_id}}</p>
+                <p>Founded: {{corporation_founded}}</p>
+                <p>Home Station: {{corporation_home_station_id}}</p>
+                <p>War Eligible: {{corporation_war_eligible}}</p>
+
             </div>
         </div>
     </div>
+    {{#if corporation_description}}
+    <div class="description">
+        <p>Description: {{{corporation_description}}}</p>
+    </div>
+    {{/if}}
     <div class="activity">
         <p>Activity last 30 days:</p>
         <br>
@@ -66,7 +66,7 @@
         <div id="losses_head" div style="display: inline">...</div>
         <div id="losses" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/activity/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(activities => {
                     const wins_prefix = "win";
@@ -142,34 +142,10 @@
     </div>
     <div class="friends">
         <br>
-        <div id="friendly_chars" div style="display: inline">...</div>
         <div id="friendly_corps" div style="display: inline">...</div>
         <div id="friendly_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/friends/char/{{character_id}}/")
-                .then(response => response.json())
-                .then(friends => {
-                    const prefix = "friendly";
-                    let map = most_active(friends, 7);
-
-                    document.getElementById("friendly_chars").innerHTML =
-                        make_items("Friendly Characters", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
-                })
-                .catch((err) => console.log("Can't access: " + err));
-
-            fetch("http://zkbinfo:8080/api/character/friends/corp/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/friends/corp/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     const prefix = "friendly";
@@ -185,7 +161,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
                                 const element = `${prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });
@@ -193,7 +169,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/friends/alli/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/friends/alli/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     const prefix = "friendly";
@@ -220,34 +196,10 @@
     </div>
     <div class="enemies">
         <br>
-        <div id="enemy_chars" div style="display: inline">...</div>
         <div id="enemy_corps" div style="display: inline">...</div>
         <div id="enemy_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/enemies/char/{{character_id}}/")
-                .then(response => response.json())
-                .then(enemies => {
-                    const prefix = "enemy";
-                    let map = most_active(enemies, 7);
-
-                    document.getElementById("enemy_chars").innerHTML =
-                        make_items("Enemy Characters", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
-                })
-                .catch((err) => console.log("Can't access: " + err));
-
-            fetch("http://zkbinfo:8080/api/character/enemies/corp/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/enemies/corp/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     const prefix = "enemy";
@@ -262,7 +214,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
                                 const element = `${prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });
@@ -270,7 +222,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/enemies/alli/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/enemies/alli/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     const prefix = "enemy";
@@ -296,10 +248,10 @@
     </div>
     <div class="prime_time">
         <br/>
-        <p>{{character_name}}'s prime time:</p>
+        <p>{{corporation_name}}'s prime time:</p>
         <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
         <script>
-            fetch("http://zkbinfo:8080/api/character/activity/hourly/{{character_id}}/")
+            fetch("http://zkbinfo:8080/api/corporation/activity/hourly/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(hourly => {
                     draw_prime_time(hourly);
