@@ -66,6 +66,15 @@ impl SearchResult {
             .and_then(|id| Some(*id))
             .ok_or(anyhow!("Character was not found"))
     }
+
+    pub fn get_corporation_id(&self) -> anyhow::Result<i32> {
+        self.corporation
+            .iter()
+            .next()
+            .and_then(|ids| ids.iter().next())
+            .and_then(|id| Some(*id))
+            .ok_or(anyhow!("Corporation was not found"))
+    }
 }
 
 #[cfg(test)]

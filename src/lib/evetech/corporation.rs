@@ -35,11 +35,16 @@ mod tests {
 
     #[tokio::test]
     async fn from() -> Result<(), String> {
-        let corporation = Corporation::from(98573194).await.map_err(|e| format!("{e}"))?;
+        let corporation = Corporation::from(98573194)
+            .await
+            .map_err(|e| format!("{e}"))?;
 
         assert_eq!(corporation.ceo_id, 2115657646);
         assert_eq!(corporation.creator_id, 2114350216);
-        assert_eq!(corporation.date_founded, Some(String::from("2018-09-05T18:41:42Z")));
+        assert_eq!(
+            corporation.date_founded,
+            Some(String::from("2018-09-05T18:41:42Z"))
+        );
         assert_eq!(&corporation.name, "SO Corporation");
         assert_eq!(&corporation.ticker, "SO C");
         Ok(())

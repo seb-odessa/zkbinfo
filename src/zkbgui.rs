@@ -5,15 +5,14 @@ use actix_files::Files;
 use actix_files::NamedFile;
 use actix_web::{get, web, App, Responder, HttpResponse, HttpServer};
 use anyhow::anyhow;
-use chrono::NaiveDateTime;
+
 use handlebars::Handlebars;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-use lib::evetech::Character;
-use lib::evetech::CharacterPortrait;
-use lib::evetech::SearchCategory;
-use lib::evetech::SearchResult;
+
+use lib::gui::CharacterProps;
+use lib::gui::CorporationProps;
 
 use std::env;
 
@@ -55,6 +54,23 @@ async fn favicon() -> impl Responder {
     NamedFile::open_async("./public/favicon.ico").await
 }
 
+#[get("/gui/{target}/{name}/")]
+async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResponse {
+    let (target, name) = path.into_inner();
+    let body = match target.as_str() {
+        "character" => match CharacterProps::from(name).await {
+            Ok(prop) => wrapper(ctx, "character", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
+        "corporation" => match CorporationProps::from(name).await {
+            Ok(prop) => wrapper(ctx, "demo", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
+        _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),
+    };
+    HttpResponse::Ok().body(body)
+}
+
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct Error {
@@ -71,73 +87,7 @@ fn wrapper<T: Serialize>(ctx: Context<'_>, template: &str, obj: &T) -> String {
         Ok(ok_body) => ok_body,
         Err(what) => {
             error!("{what}");
-            let error = Error {
-                error: format!("{what}"),
-            };
-            match ctx.render("error", &error) {
-                Ok(error_body) => error_body,
-                Err(error) => {
-                    error!("{error}");
-                    format!("'{error}' : '{what}'")
-                }
-            }
+            format!("{what}")
         }
     }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct CharacterProps {
-    character_id: i32,
-    character_name: String,
-    character_gender: String,
-    character_birthday: String,
-    character_security_status: String,
-
-    corporation_id: i32,
-    alliance_id: i32,
-
-    img_64x64: String,
-    img_128x128: String,
-    img_256x256: String,
-}
-impl CharacterProps {
-    pub async fn from(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(&name, SearchCategory::Character)
-            .await?
-            .get_character_id()?;
-
-        let character = Character::from(id).await?;
-        let portrait = CharacterPortrait::from(id).await?;
-        let parse_date = NaiveDateTime::parse_from_str;
-        let birthday = parse_date(&character.birthday, "%Y-%m-%dT%H:%M:%SZ")?;
-
-        Ok(Self {
-            character_id: id,
-            character_name: character.name,
-            character_gender: character.gender,
-            character_birthday: birthday.format("%Y-%m-%d %H:%M:%S").to_string(),
-            character_security_status: format!("{:.2}", character.security_status),
-
-            corporation_id: character.corporation_id,
-
-            alliance_id: character.alliance_id.unwrap_or_default(),
-
-            img_64x64: portrait.px64x64,
-            img_128x128: portrait.px128x128,
-            img_256x256: portrait.px256x256,
-        })
-    }
-}
-
-#[get("/gui/{target}/{name}/")]
-async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResponse {
-    let (target, name) = path.into_inner();
-    let body = match target.as_str() {
-        "character" => match CharacterProps::from(name).await {
-            Ok(prop) => wrapper(ctx, "character", &prop),
-            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
-        },
-        _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),
-    };
-    HttpResponse::Ok().body(body)
 }
