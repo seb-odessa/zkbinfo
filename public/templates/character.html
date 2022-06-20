@@ -185,7 +185,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
                                 const element = `${prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });
@@ -262,7 +262,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
                                 const element = `${prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });

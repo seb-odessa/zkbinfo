@@ -18,5 +18,6 @@ pub use character::Character;
 pub use corporation::Corporation;
 pub use killmail::Killmail;
 pub use images::CharacterPortrait;
+pub use images::CorporationIcon;
 pub use search::SearchCategory;
 pub use search::SearchResult;

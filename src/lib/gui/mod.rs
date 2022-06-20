@@ -1,9 +1,10 @@
-use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
 
 use crate::evetech::Character;
-use crate::evetech::Corporation;
 use crate::evetech::CharacterPortrait;
+use crate::evetech::Corporation;
+use crate::evetech::CorporationIcon;
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
 
@@ -40,7 +41,6 @@ impl CharacterProps {
             corporation_id: character.corporation_id,
             alliance_id: character.alliance_id.unwrap_or_default(),
             img_128x128: portrait.px128x128,
-
         })
     }
 }
@@ -49,6 +49,7 @@ impl CharacterProps {
 pub struct CorporationProps {
     corporation_id: i32,
     corporation_name: String,
+    corporation_icon: String,
     corporation_ticker: String,
     corporation_member_count: i32,
     corporation_ceo_id: i32,
@@ -68,19 +69,29 @@ impl CorporationProps {
             .get_corporation_id()?;
 
         let corporation = Corporation::from(id).await?;
+        let icons = CorporationIcon::from(id).await?;
         let parse_date = NaiveDateTime::parse_from_str;
+
+
+
+
 
         Ok(Self {
             corporation_id: id,
             corporation_name: corporation.name,
+            corporation_icon: icons.px128x128,
             corporation_ticker: corporation.ticker,
             corporation_member_count: corporation.member_count,
             corporation_ceo_id: corporation.ceo_id,
             corporation_creator_id: corporation.creator_id,
-            corporation_founded: corporation.date_founded
-                        .and_then(|founded|parse_date(&founded, "%Y-%m-%dT%H:%M:%SZ").ok())
-                        .and_then(|date| Some(date.format("%Y-%m-%d %H:%M:%S").to_string())),
-            corporation_description: corporation.description,
+            corporation_founded: corporation
+                .date_founded
+                .and_then(|founded| parse_date(&founded, "%Y-%m-%dT%H:%M:%SZ").ok())
+                .and_then(|date| Some(date.format("%Y-%m-%d %H:%M:%S").to_string())),
+            corporation_description: None,
+            // corporation.description
+            //     .and_then(|desc| serde_json::from_str(&desc).ok()) + unescape unicode
+
             corporation_home_station_id: corporation.home_station_id,
             corporation_url: corporation.url,
             corporation_war_eligible: corporation.war_eligible,
