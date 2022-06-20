@@ -8,6 +8,8 @@
 
 <body>
     <script type="text/javascript" src="/js/script.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <div class="content">
         <div class="portrait">
             <img src="{{{img_128x128}}}" alt="128x128" width="128" height="128">
@@ -291,6 +293,19 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
         </script>
+    </div>
+    <div class="prime_time">
+        <br/>
+        <p>{{character_name}}'s prime time:</p>
+        <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/activity/hourly/{{character_id}}/")
+                .then(response => response.json())
+                .then(hourly => {
+                    draw_prime_time(hourly);
+                });
+        </script>
+
     </div>
 
 </body>
