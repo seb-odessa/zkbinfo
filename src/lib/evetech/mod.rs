@@ -10,13 +10,13 @@ mod alliance;
 mod character;
 mod corporation;
 mod killmail;
-mod portrait;
+mod images;
 mod search;
 
 pub use alliance::Alliance;
 pub use character::Character;
 pub use corporation::Corporation;
 pub use killmail::Killmail;
-pub use portrait::CharacterPortrait;
+pub use images::CharacterPortrait;
 pub use search::SearchCategory;
 pub use search::SearchResult;

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{character_name}} Info</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <script type="text/javascript" src="/js/script.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="content">
+        <div class="portrait">
+            <img src="{{{img_128x128}}}" alt="128x128" width="128" height="128">
+        </div>
+        <div class="info">
+            <div id="character">
+                Character Name: {{character_name}}
+                <a href="https://evewho.com/character/{{character_id}}">evewho</a>
+                <a href="https://zkillboard.com/character/{{character_id}}/">zkillboard.com</a>
+            </div>
+            <div id="corporation">
+                Corporation Name:
+                <div id="{{corporation_id}}" div style="display: inline">...</div>
+                <script>
+                    fetch("https://esi.evetech.net/latest/corporations/{{corporation_id}}/?datasource=tranquility")
+                        .then(response => response.json())
+                        .then(json => document.getElementById("{{corporation_id}}").innerHTML =
+                            json.name + " [" + json.ticker + "] (" + json.member_count + ")"
+                        )
+                        .catch((err) => console.log("Can't access: " + err));
+                </script>
+                <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
+                <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
+            </div>
+            {{#if alliance_id}}
+            <div id="aliance">
+                Alliance Name:
+                <div id="{{alliance_id}}" div style="display: inline">...</div>
+                <script>
+                    fetch("https://esi.evetech.net/latest/alliances/{{alliance_id}}/?datasource=tranquility")
+                        .then(response => response.json())
+                        .then(json => document.getElementById("{{alliance_id}}").innerHTML =
+                            json.name + " [" + json.ticker + "]"
+                        )
+                        .catch((err) => console.log("Can't access: " + err));
+                </script>
+                <a href="https://evewho.com/alliance/{{alliance_id}}">evewho</a>
+                <a href="https://zkillboard.com/alliance/{{alliance_id}}/">zkillboard.com</a>
+            </div>
+            {{/if}}
+            <div id="details">
+                <p>Character Gender: {{character_gender}}</p>
+                <p>Birthday: {{character_birthday}}</p>
+                <p>Security Status: {{character_security_status}}</p>
+            </div>
+        </div>
+    </div>
+    <div class="activity">
+        <p>Activity last 30 days:</p>
+        <br>
+        <div id="wins_head" div style="display: inline">...</div>
+        <div id="wins" div style="display: inline">...</div>
+        <br>
+        <div id="losses_head" div style="display: inline">...</div>
+        <div id="losses" div style="display: inline">...</div>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
+                .then(response => response.json())
+                .then(activities => {
+                    const wins_prefix = "win";
+                    const wins_damage = activities.wins.total_damage;
+                    const wins_solar_systems = most_active(activities.wins.solar_systems, 7);
+                    const wins_ships = most_active(activities.wins.ships, 7);
+                    document.getElementById("wins_head").innerHTML = "<p>Wins: " + activities.wins.total_count + "</p>";
+                    document.getElementById("wins").innerHTML =
+                        make_damage(wins_damage) +
+                        make_items("Systems with most activities", wins_prefix, wins_solar_systems) +
+                        make_items("Favorite ships", wins_prefix, wins_ships);
+
+                    requestNamesAsync(Array.from(wins_solar_systems.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = wins_solar_systems.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/system/${id}/">${name} (${count})</a>`;
+                                const element = `${wins_prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+
+                    requestNamesAsync(Array.from(wins_ships.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = wins_ships.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                const element = `${wins_prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+
+                    const losses_prefix = "loss";
+                    const losses_damage = activities.losses.total_damage;
+                    const losses_solar_systems = most_active(activities.losses.solar_systems, 7);
+                    const losses_ships = most_active(activities.losses.ships, 7);
+                    document.getElementById("losses_head").innerHTML = "<p>Losses: " + activities.losses.total_count + "</p>";
+                    document.getElementById("losses").innerHTML =
+                        make_damage(losses_damage) +
+                        make_items("Systems with most activities", losses_prefix, losses_solar_systems) +
+                        make_items("Favorite ships", losses_prefix, losses_ships);
+
+                    requestNamesAsync(Array.from(losses_solar_systems.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = losses_solar_systems.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/system/${id}/">${name} (${count})</a>`;
+                                const element = `${losses_prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+
+                    requestNamesAsync(Array.from(losses_ships.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = losses_ships.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                const element = `${losses_prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+        </script>
+    </div>
+    <div class="friends">
+        <br>
+        <div id="friendly_chars" div style="display: inline">...</div>
+        <div id="friendly_corps" div style="display: inline">...</div>
+        <div id="friendly_allis" div style="display: inline">...</div>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/friends/char/{{character_id}}/")
+                .then(response => response.json())
+                .then(friends => {
+                    const prefix = "friendly";
+                    let map = most_active(friends, 7);
+
+                    document.getElementById("friendly_chars").innerHTML =
+                        make_items("Friendly Characters", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+
+            fetch("http://zkbinfo:8080/api/character/friends/corp/{{character_id}}/")
+                .then(response => response.json())
+                .then(friends => {
+                    const prefix = "friendly";
+                    let map = most_active(friends, 7);
+                    map.delete(`{{corporation_id}}`);
+
+                    document.getElementById("friendly_corps").innerHTML =
+                        make_items("Friendly Corporations", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+
+            fetch("http://zkbinfo:8080/api/character/friends/alli/{{character_id}}/")
+                .then(response => response.json())
+                .then(friends => {
+                    const prefix = "friendly";
+                    let map = most_active(friends, 7);
+                    map.delete(`{{alliance_id}}`);
+
+                    document.getElementById("friendly_allis").innerHTML =
+                        make_items("Friendly Alliances", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/alliance/${id}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+        </script>
+    </div>
+    <div class="enemies">
+        <br>
+        <div id="enemy_chars" div style="display: inline">...</div>
+        <div id="enemy_corps" div style="display: inline">...</div>
+        <div id="enemy_allis" div style="display: inline">...</div>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/enemies/char/{{character_id}}/")
+                .then(response => response.json())
+                .then(enemies => {
+                    const prefix = "enemy";
+                    let map = most_active(enemies, 7);
+
+                    document.getElementById("enemy_chars").innerHTML =
+                        make_items("Enemy Characters", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+
+            fetch("http://zkbinfo:8080/api/character/enemies/corp/{{character_id}}/")
+                .then(response => response.json())
+                .then(enemies => {
+                    const prefix = "enemy";
+                    const map = most_active(enemies, 6);
+
+                    document.getElementById("enemy_corps").innerHTML =
+                        make_items("Enemy Corporations", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/corporation/${id}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+
+            fetch("http://zkbinfo:8080/api/character/enemies/alli/{{character_id}}/")
+                .then(response => response.json())
+                .then(enemies => {
+                    const prefix = "enemy";
+                    let map = most_active(enemies, 6);
+
+                    document.getElementById("enemy_allis").innerHTML =
+                        make_items("Enemy Alliances", prefix, map);
+
+                    requestNamesAsync(Array.from(map.keys()))
+                        .then(names => {
+                            names.forEach((obj) => {
+                                const id = obj.id;
+                                const name = obj.name;
+                                const count = map.get(`${id}`);
+                                const href = `<a href="https://zkillboard.com/alliance/${id}/">${name} (${count})</a>`;
+                                const element = `${prefix}_${id}`;
+                                document.getElementById(element).innerHTML = href;
+                            });
+                        });
+                })
+                .catch((err) => console.log("Can't access: " + err));
+        </script>
+    </div>
+    <div class="prime_time">
+        <br/>
+        <p>{{character_name}}'s prime time:</p>
+        <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
+        <script>
+            fetch("http://zkbinfo:8080/api/character/activity/hourly/{{character_id}}/")
+                .then(response => response.json())
+                .then(hourly => {
+                    draw_prime_time(hourly);
+                });
+        </script>
+
+    </div>
+
+</body>
+
+</html>
