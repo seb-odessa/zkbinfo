@@ -49,3 +49,31 @@ function format(prefix, systems, ships, damage) {
     html.push(make_items("Favorite ships", prefix, ships));
     return html.join("");
 }
+
+function draw_prime_time(hourly) {
+    const canvas = document.getElementById('prime_time').getContext('2d');
+    const data = {
+        datasets: [{
+            label: 'killmails/hour',
+            data: hourly,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    };
+
+    const myChart = new Chart(canvas, config);
+}
