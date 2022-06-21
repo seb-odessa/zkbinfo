@@ -58,11 +58,9 @@
     </div>
     {{/if}}
     <div class="activity">
-        <p>Activity last 30 days:</p>
-        <br>
+        <h4>Activity last 30 days:</h4>
         <div id="wins_head" div style="display: inline">...</div>
         <div id="wins" div style="display: inline">...</div>
-        <br>
         <div id="losses_head" div style="display: inline">...</div>
         <div id="losses" div style="display: inline">...</div>
         <script>
@@ -71,9 +69,9 @@
                 .then(activities => {
                     const wins_prefix = "win";
                     const wins_damage = activities.wins.total_damage;
-                    const wins_solar_systems = most_active(activities.wins.solar_systems, 7);
-                    const wins_ships = most_active(activities.wins.ships, 7);
-                    document.getElementById("wins_head").innerHTML = "<p>Wins: " + activities.wins.total_count + "</p>";
+                    const wins_solar_systems = sort_by_count(activities.wins.solar_systems);
+                    const wins_ships = sort_by_count(activities.wins.ships);
+                    document.getElementById("wins_head").innerHTML = "<h5>Wins: " + activities.wins.total_count + "</h5>";
                     document.getElementById("wins").innerHTML =
                         make_damage(wins_damage) +
                         make_items("Systems with most activities", wins_prefix, wins_solar_systems) +
@@ -105,9 +103,9 @@
 
                     const losses_prefix = "loss";
                     const losses_damage = activities.losses.total_damage;
-                    const losses_solar_systems = most_active(activities.losses.solar_systems, 7);
-                    const losses_ships = most_active(activities.losses.ships, 7);
-                    document.getElementById("losses_head").innerHTML = "<p>Losses: " + activities.losses.total_count + "</p>";
+                    const losses_solar_systems = sort_by_count(activities.losses.solar_systems);
+                    const losses_ships = sort_by_count(activities.losses.ships);
+                    document.getElementById("losses_head").innerHTML = "<h5>Losses: " + activities.losses.total_count + "</h5>";
                     document.getElementById("losses").innerHTML =
                         make_damage(losses_damage) +
                         make_items("Systems with most activities", losses_prefix, losses_solar_systems) +
@@ -141,7 +139,7 @@
         </script>
     </div>
     <div class="friends">
-        <br>
+        <h5>Friends:</h5>
         <div id="friendly_corps" div style="display: inline">...</div>
         <div id="friendly_allis" div style="display: inline">...</div>
         <script>
@@ -149,7 +147,7 @@
                 .then(response => response.json())
                 .then(friends => {
                     const prefix = "friendly";
-                    let map = most_active(friends, 7);
+                    let map = sort_by_count(friends);
                     map.delete(`{{corporation_id}}`);
 
                     document.getElementById("friendly_corps").innerHTML =
@@ -173,7 +171,7 @@
                 .then(response => response.json())
                 .then(friends => {
                     const prefix = "friendly";
-                    let map = most_active(friends, 7);
+                    let map = sort_by_count(friends);
                     map.delete(`{{alliance_id}}`);
 
                     document.getElementById("friendly_allis").innerHTML =
@@ -195,7 +193,7 @@
         </script>
     </div>
     <div class="enemies">
-        <br>
+        <h5>Enemies:</h5>
         <div id="enemy_corps" div style="display: inline">...</div>
         <div id="enemy_allis" div style="display: inline">...</div>
         <script>
@@ -203,7 +201,7 @@
                 .then(response => response.json())
                 .then(enemies => {
                     const prefix = "enemy";
-                    const map = most_active(enemies, 6);
+                    const map = sort_by_count(enemies, 6);
 
                     document.getElementById("enemy_corps").innerHTML =
                         make_items("Enemy Corporations", prefix, map);
@@ -226,7 +224,7 @@
                 .then(response => response.json())
                 .then(enemies => {
                     const prefix = "enemy";
-                    let map = most_active(enemies, 6);
+                    let map = sort_by_count(enemies, 6);
 
                     document.getElementById("enemy_allis").innerHTML =
                         make_items("Enemy Alliances", prefix, map);
@@ -248,7 +246,7 @@
     </div>
     <div class="prime_time">
         <br/>
-        <p>{{corporation_name}}'s prime time:</p>
+        <h5>{{corporation_name}}'s prime time:</h5>
         <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
         <script>
             fetch("http://zkbinfo:8080/api/corporation/activity/hourly/{{corporation_id}}/")
