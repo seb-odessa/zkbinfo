@@ -5,6 +5,9 @@ use crate::evetech::Character;
 use crate::evetech::CharacterPortrait;
 use crate::evetech::Corporation;
 use crate::evetech::CorporationIcon;
+use crate::evetech::Alliance;
+use crate::evetech::AllianceIcon;
+
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
 
@@ -72,10 +75,6 @@ impl CorporationProps {
         let icons = CorporationIcon::from(id).await?;
         let parse_date = NaiveDateTime::parse_from_str;
 
-
-
-
-
         Ok(Self {
             corporation_id: id,
             corporation_name: corporation.name,
@@ -96,6 +95,42 @@ impl CorporationProps {
             corporation_url: corporation.url,
             corporation_war_eligible: corporation.war_eligible,
             alliance_id: corporation.alliance_id,
+        })
+    }
+}
+
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AllianceProps {
+    alliance_id: i32,
+    alliance_name: String,
+    alliance_icon: String,
+    alliance_ticker: String,
+
+    alliance_creator_id: i32,
+    alliance_executor_corporation_id: Option<i32>,
+    alliance_founded: Option<String>,
+}
+impl AllianceProps {
+    pub async fn from(name: String) -> anyhow::Result<Self> {
+        let id = SearchResult::from(&name, SearchCategory::Alliance)
+            .await?
+            .get_alliance_id()?;
+
+        let alliance = Alliance::from(id).await?;
+        let icons = AllianceIcon::from(id).await?;
+        let parse_date = NaiveDateTime::parse_from_str;
+
+
+        Ok(Self {
+            alliance_id: id,
+            alliance_name: alliance.name,
+            alliance_icon: icons.px128x128,
+            alliance_ticker: alliance.ticker,
+            alliance_creator_id: alliance.creator_id,
+            alliance_executor_corporation_id: alliance.executor_corporation_id,
+            alliance_founded: parse_date(&alliance.date_founded, "%Y-%m-%dT%H:%M:%SZ").ok()
+                                .and_then(|date| Some(date.format("%Y-%m-%d %H:%M:%S").to_string())),
         })
     }
 }
