@@ -20,9 +20,9 @@ async function get(url = '') {
     return await response.json();
 }
 
-function most_active(obj, count) {
-    // return new Map(Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, count));
-    let obj_map = new Map(Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, count));
+function sort_by_count(obj) {
+    // let obj_map = new Map(Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, count));
+    let obj_map = new Map(Object.entries(obj).sort((a, b) => b[1] - a[1]));
     let map = new Map();
     obj_map.forEach((value, key) => { map.set(key, value) });
     return map;
@@ -32,21 +32,19 @@ function make_damage(damage) {
     return "<p>Total damage: " + damage + "</p>";
 }
 
-function make_items(msg, prefix, map) {
+function make_items(msg, prefix, map, display = 6) {
     let html = [];
-    html.push(`<div>${msg}: `)
+    html.push("<div>" + msg + ":");
+    let idx = 0;
     map.forEach((count, id) => {
         html.push(`<div id="${prefix}_${id}" div style="display: inline">*</div> `);
+        if (display == ++idx) {
+            html.push("<details><summary>More (" + (map.size - idx) + ") items...</summary>");
+        } else if (count == map.size) {
+            html.push("</details>");
+        }
     });
     html.push("</div>");
-    return html.join("");
-}
-
-function format(prefix, systems, ships, damage) {
-    let html = [];
-    html.push(make_damage(damage));
-    html.push(make_items("Systems with most activities", prefix, systems));
-    html.push(make_items("Favorite ships", prefix, ships));
     return html.join("");
 }
 
