@@ -226,7 +226,7 @@ pub fn relations(
         )
         SELECT {relation_field} AS id, count(id) AS times
         FROM character_killmails JOIN participants ON id = killmail_id
-        WHERE {id_field} <> {id}
+        WHERE {id_field} <> {id} AND is_victim = 0
         GROUP BY 1;");
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| Ok((row.get(0).unwrap_or_default(), row.get(1)?)))?;
