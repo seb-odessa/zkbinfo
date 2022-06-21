@@ -44,7 +44,8 @@
                     fetch("https://esi.evetech.net/latest/alliances/{{alliance_id}}/?datasource=tranquility")
                         .then(response => response.json())
                         .then(json => document.getElementById("{{alliance_id}}").innerHTML =
-                            json.name + " [" + json.ticker + "]"
+                            `<a href="/gui/alliance/${json.name}/">${json.name}</a>` +
+                            " [" + json.ticker + "]"
                         )
                         .catch((err) => console.log("Can't access: " + err));
                 </script>
@@ -149,71 +150,29 @@
             fetch("http://zkbinfo:8080/api/character/friends/char/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
-                    const prefix = "friendly";
                     let map = sort_by_count(friends);
-
-                    document.getElementById("friendly_chars").innerHTML =
-                        make_items("Friendly Characters", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("friendly_chars").innerHTML = make_items("Friendly Characters", "friend", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("character", "friend", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
             fetch("http://zkbinfo:8080/api/character/friends/corp/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
-                    const prefix = "friendly";
                     let map = sort_by_count(friends);
                     map.delete(`{{corporation_id}}`);
-
-                    document.getElementById("friendly_corps").innerHTML =
-                        make_items("Friendly Corporations", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("friendly_corps").innerHTML = make_items("Friendly Corporations", "friend", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("corporation", "friend", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
             fetch("http://zkbinfo:8080/api/character/friends/alli/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
-                    const prefix = "friendly";
                     let map = sort_by_count(friends);
                     map.delete(`{{alliance_id}}`);
-
-                    document.getElementById("friendly_allis").innerHTML =
-                        make_items("Friendly Alliances", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/alliance/${id}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("friendly_allis").innerHTML = make_items("Friendly Alliances", "friend", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("alliance", "friend", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
         </script>
@@ -227,69 +186,28 @@
             fetch("http://zkbinfo:8080/api/character/enemies/char/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
-                    const prefix = "enemy";
                     let map = sort_by_count(enemies);
-
-                    document.getElementById("enemy_chars").innerHTML =
-                        make_items("Enemy Characters", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/character/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("enemy_chars").innerHTML = make_items("Enemy Characters", "enemy", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("character", "enemy", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
             fetch("http://zkbinfo:8080/api/character/enemies/corp/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
-                    const prefix = "enemy";
                     const map = sort_by_count(enemies, 6);
-
-                    document.getElementById("enemy_corps").innerHTML =
-                        make_items("Enemy Corporations", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="/gui/corporation/${name}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("enemy_corps").innerHTML = make_items("Enemy Corporations", "enemy", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("corporation", "enemy", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
             fetch("http://zkbinfo:8080/api/character/enemies/alli/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
-                    const prefix = "enemy";
+
                     let map = sort_by_count(enemies, 6);
-
-                    document.getElementById("enemy_allis").innerHTML =
-                        make_items("Enemy Alliances", prefix, map);
-
-                    requestNamesAsync(Array.from(map.keys()))
-                        .then(names => {
-                            names.forEach((obj) => {
-                                const id = obj.id;
-                                const name = obj.name;
-                                const count = map.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/alliance/${id}/">${name} (${count})</a>`;
-                                const element = `${prefix}_${id}`;
-                                document.getElementById(element).innerHTML = href;
-                            });
-                        });
+                    document.getElementById("enemy_allis").innerHTML = make_items("Enemy Alliances", "enemy", map);
+                    requestNamesAsync(Array.from(map.keys())).then(names => update("alliance", "enemy", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
         </script>
@@ -300,9 +218,7 @@
         <script>
             fetch("http://zkbinfo:8080/api/character/activity/hourly/{{character_id}}/")
                 .then(response => response.json())
-                .then(hourly => {
-                    draw_prime_time(hourly);
-                });
+                .then(hourly => draw_prime_time(hourly));
         </script>
 
     </div>

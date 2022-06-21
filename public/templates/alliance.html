@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{{corporation_name}} Info</title>
+    <title>{{alliance_name}} Info</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 
@@ -12,47 +12,22 @@
 
     <div class="content">
         <div class="portrait">
-            <img src="{{{corporation_icon}}}" alt="128x128" width="128" height="128">
+            <img src="{{{alliance_icon}}}" alt="128x128" width="128" height="128">
         </div>
         <div class="info">
-            <div id="corporation">
-                Corporation:
-                <a href="/gui/corporation/{{corporation_name}}/">{{corporation_name}} [{{corporation_ticker}}] ({{corporation_member_count}})</a>
-                <a href="{{{corporation_url}}}">homepage</a>
-                <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
-                <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
-            </div>
-            {{#if alliance_id}}
             <div id="aliance">
                 Alliance:
-                <div id="{{alliance_id}}" div style="display: inline">...</div>
-                <script>
-                    fetch("https://esi.evetech.net/latest/alliances/{{alliance_id}}/?datasource=tranquility")
-                        .then(response => response.json())
-                        .then(json => document.getElementById("{{alliance_id}}").innerHTML =
-                            `<a href="/gui/alliance/${json.name}/">${json.name}</a>` + " [" + json.ticker + "]"
-                        )
-                        .catch((err) => console.log("Can't access: " + err));
-                </script>
+                <a href="/gui/alliance/{{corporation_name}}/">{{alliance_name}} [{{alliance_ticker}}]</a>
                 <a href="https://evewho.com/alliance/{{alliance_id}}">evewho</a>
                 <a href="https://zkillboard.com/alliance/{{alliance_id}}/">zkillboard.com</a>
             </div>
-            {{/if}}
             <div id="details">
-                <p>CEO: {{corporation_ceo_id}}</p>
-                <p>Creator: {{corporation_creator_id}}</p>
-                <p>Founded: {{corporation_founded}}</p>
-                <p>Home Station: {{corporation_home_station_id}}</p>
-                <p>War Eligible: {{corporation_war_eligible}}</p>
-
+                <p>Creator: {{alliance_creator_id}}</p>
+                <p>Executor Corporation: {{alliance_executor_corporation_id}}</p>
+                <p>Founded: {{alliance_founded}}</p>
             </div>
         </div>
     </div>
-    {{#if corporation_description}}
-    <div class="description">
-        <p>Description: {{{corporation_description}}}</p>
-    </div>
-    {{/if}}
     <div class="activity">
         <h4>Activity last 30 days:</h4>
         <div id="wins_head" div style="display: inline">...</div>
@@ -60,7 +35,7 @@
         <div id="losses_head" div style="display: inline">...</div>
         <div id="losses" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/activity/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/activity/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(activities => {
                     const wins_prefix = "win";
@@ -139,17 +114,17 @@
         <div id="friendly_corps" div style="display: inline">...</div>
         <div id="friendly_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/friends/corp/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/friends/corp/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
-                    map.delete(`{{corporation_id}}`);
+                    map.delete(`{{alliance_id}}`);
                     document.getElementById("friendly_corps").innerHTML = make_items("Friendly Corporations", "friend", map);
                     requestNamesAsync(Array.from(map.keys())).then(names => update("corporation", "friend", names, map));
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/corporation/friends/alli/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/friends/alli/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -165,7 +140,7 @@
         <div id="enemy_corps" div style="display: inline">...</div>
         <div id="enemy_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/enemies/corp/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/enemies/corp/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     const map = sort_by_count(enemies, 6);
@@ -174,7 +149,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/corporation/enemies/alli/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/enemies/alli/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     let map = sort_by_count(enemies, 6);
@@ -186,10 +161,10 @@
     </div>
     <div class="prime_time">
         <br/>
-        <h5>{{corporation_name}}'s prime time:</h5>
+        <h5>{{alliance_name}}'s prime time:</h5>
         <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/activity/hourly/{{corporation_id}}/")
+            fetch("http://zkbinfo:8080/api/alliance/activity/hourly/{{alliance_id}}/")
                 .then(response => response.json())
                 .then(hourly => {
                     draw_prime_time(hourly);

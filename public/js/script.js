@@ -34,7 +34,7 @@ function make_damage(damage) {
 
 function make_items(msg, prefix, map, display = 6) {
     let html = [];
-    html.push("<div>" + msg + ":");
+    html.push("<div>" + msg + ":&nbsp;");
     let idx = 0;
     map.forEach((count, id) => {
         html.push(`<div id="${prefix}_${id}" div style="display: inline">*</div> `);
@@ -47,6 +47,18 @@ function make_items(msg, prefix, map, display = 6) {
     html.push("</div>");
     return html.join("");
 }
+
+function update(category, prefix, names, map) {
+    names.forEach((obj) => {
+        const id = obj.id;
+        const name = obj.name;
+        const count = map.get(`${id}`);
+        const href = `<a href="/gui/${category}/${name}/">${name} (${count})</a>`;
+        const element = `${prefix}_${id}`;
+        document.getElementById(element).innerHTML = href;
+    });
+}
+
 
 function draw_prime_time(hourly) {
     const canvas = document.getElementById('prime_time').getContext('2d');

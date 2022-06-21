@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use lib::gui::CharacterProps;
 use lib::gui::CorporationProps;
+use lib::gui::AllianceProps;
 
 use std::env;
 
@@ -64,6 +65,10 @@ async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResp
         },
         "corporation" => match CorporationProps::from(name).await {
             Ok(prop) => wrapper(ctx, "corporation", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
+        "alliance" => match AllianceProps::from(name).await {
+            Ok(prop) => wrapper(ctx, "alliance", &prop),
             Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
         },
         _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),
