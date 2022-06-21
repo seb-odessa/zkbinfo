@@ -16,18 +16,20 @@
         </div>
         <div class="info">
             <div id="character">
-                Character Name: {{character_name}}
+                Character:
+                <a href="/gui/character/{{character_name}}/">{{character_name}}</a>
                 <a href="https://evewho.com/character/{{character_id}}">evewho</a>
                 <a href="https://zkillboard.com/character/{{character_id}}/">zkillboard.com</a>
             </div>
             <div id="corporation">
-                Corporation Name:
+                Corporation:
                 <div id="{{corporation_id}}" div style="display: inline">...</div>
                 <script>
                     fetch("https://esi.evetech.net/latest/corporations/{{corporation_id}}/?datasource=tranquility")
                         .then(response => response.json())
                         .then(json => document.getElementById("{{corporation_id}}").innerHTML =
-                            json.name + " [" + json.ticker + "] (" + json.member_count + ")"
+                            `<a href="/gui/corporation/${json.name}/">${json.name}</a>` +
+                            " [" + json.ticker + "] (" + json.member_count + ")"
                         )
                         .catch((err) => console.log("Can't access: " + err));
                 </script>
@@ -36,7 +38,7 @@
             </div>
             {{#if alliance_id}}
             <div id="aliance">
-                Alliance Name:
+                Alliance:
                 <div id="{{alliance_id}}" div style="display: inline">...</div>
                 <script>
                     fetch("https://esi.evetech.net/latest/alliances/{{alliance_id}}/?datasource=tranquility")
