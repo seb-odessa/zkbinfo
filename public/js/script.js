@@ -38,9 +38,9 @@ function make_items(msg, prefix, map, display = 6) {
     let idx = 0;
     map.forEach((count, id) => {
         html.push(`<div id="${prefix}_${id}" div style="display: inline">*</div> `);
-        if (display == ++idx) {
+        if (display == ++idx && idx != map.size) {
             html.push("<details><summary>More (" + (map.size - idx) + ") items...</summary>");
-        } else if (count == map.size) {
+        } else if (idx == map.size) {
             html.push("</details>");
         }
     });
