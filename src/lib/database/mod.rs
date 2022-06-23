@@ -188,7 +188,7 @@ pub fn history(conn: &Connection, id: i32, sbj: QuerySubject) -> anyhow::Result<
     let sql = format!(
             "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id
              FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
-             WHERE {sbj_field} = {id} AND killmail_time and killmail_time > date('now', {HISTORY_DEPTH})
+             WHERE {sbj_field} = {id} AND killmail_time > date('now', {HISTORY_DEPTH})
              ORDER BY killmail_time;
              ;"
         );
