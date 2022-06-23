@@ -61,11 +61,11 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .route(
                         "/corporation/{id}/lost/{ship}/",
-                        web::get().to(api::character::lost_ship),
+                        web::get().to(api::corporation::lost_ship),
                     )
                     .route(
                         "/alliance/{id}/lost/{ship}/",
-                        web::get().to(api::character::lost_ship),
+                        web::get().to(api::alliance::lost_ship),
                     )
                     .route(
                         "/character/activity/{id}/",
