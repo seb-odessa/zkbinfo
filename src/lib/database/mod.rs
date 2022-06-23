@@ -97,11 +97,11 @@ pub fn cleanup(conn: &Connection) -> anyhow::Result<()> {
         WHERE killmail_id IN (
 	        SELECT killmail_id
 	        FROM killmails
-	        WHERE killmail_time < date('now', '-90 days')
+	        WHERE killmail_time < date('now', '-360 days')
         );
 
         DELETE FROM killmails
-	    WHERE killmail_time < date('now', '-90 days');
+	    WHERE killmail_time < date('now', '-360 days');
     ").map_err(|e| anyhow!(e))?;
     Ok(())
 }
