@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 use lib::gui::CharacterProps;
 use lib::gui::CorporationProps;
 use lib::gui::AllianceProps;
-use lib::gui::CharacterLostProps;
+use lib::gui::LostProps;
+use lib::evetech::SearchCategory;
 
 use std::env;
 
@@ -100,18 +101,18 @@ async fn report2(ctx: Context<'_>, path: web::Path<(String, i32)>) -> HttpRespon
 async fn lost_ships(ctx: Context<'_>, path: web::Path<(String, i32, i32)>) -> HttpResponse {
     let (target, id, ship_id) = path.into_inner();
     let body = match target.as_str() {
-        "character" => match CharacterLostProps::from(id, ship_id).await {
-            Ok(prop) => wrapper(ctx, "ship_losts", &prop),
+        "character" => match LostProps::from(id, ship_id, SearchCategory::Character).await {
+            Ok(prop) => wrapper(ctx, "losts", &prop),
             Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
         },
-        // "corporation" => match CorporationProps::from(name).await {
-        //     Ok(prop) => wrapper(ctx, "corporation", &prop),
-        //     Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
-        // },
-        // "alliance" => match AllianceProps::from(name).await {
-        //     Ok(prop) => wrapper(ctx, "alliance", &prop),
-        //     Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
-        // },
+        "corporation" => match LostProps::from(id, ship_id, SearchCategory::Corporation).await {
+            Ok(prop) => wrapper(ctx, "losts", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
+        "alliance" => match LostProps::from(id, ship_id, SearchCategory::Alliance).await {
+            Ok(prop) => wrapper(ctx, "losts", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        },
         _ => wrapper(ctx, "error", &Error::from(format!("Unknown Target"))),
     };
 
