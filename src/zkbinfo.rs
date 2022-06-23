@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
     let context = web::Data::new(state);
 
     actix_rt::spawn(async move {
-        let mut interval = actix_rt::time::interval(Duration::from_secs(60 * 60 * 1));
+        let mut interval = actix_rt::time::interval(Duration::from_secs(60 * 60 * 48));
         loop {
             interval.tick().await;
             if let Ok(conn) = cleanup.get() {
