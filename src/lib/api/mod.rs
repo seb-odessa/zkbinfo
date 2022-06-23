@@ -16,6 +16,7 @@ use database::SqlitePool;
 
 type Context = web::Data<AppState>;
 type Param = web::Path<String>;
+type Param2 = web::Path<(String, String)>;
 
 pub struct AppState {
     pub stat: Mutex<Stat>,
@@ -58,6 +59,7 @@ pub enum StatType {
 
     ActivityCount,
     ActivityHourlyCount,
+    LostShipsCount,
 
     FriendsCharacterCount,
     FriendsCorporationCount,
@@ -130,6 +132,12 @@ pub mod character {
         activity_hourly_wrapper(ctx, id, SUBJECT)
     }
 
+    pub async fn lost_ship(ctx: Context, param: Param2) -> impl Responder {
+        ctx.notify(SUBJECT, StatType::LostShipsCount);
+
+        lost_ship_wrapper(ctx, param, SUBJECT)
+    }
+
     pub async fn friends_char(ctx: Context, id: Param) -> impl Responder {
         ctx.notify(SUBJECT, StatType::FriendsCharacterCount);
 
@@ -171,6 +179,7 @@ pub mod corporation {
     use super::*;
     const SUBJECT: QuerySubject = QuerySubject::Corporation;
 
+
     pub async fn activity(ctx: Context, id: Param) -> impl Responder {
         ctx.notify(SUBJECT, StatType::CorporationActivityCount);
 
@@ -181,6 +190,12 @@ pub mod corporation {
         ctx.notify(SUBJECT, StatType::ActivityHourlyCount);
 
         activity_hourly_wrapper(ctx, id, SUBJECT)
+    }
+
+    pub async fn lost_ship(ctx: Context, param: Param2) -> impl Responder {
+        ctx.notify(SUBJECT, StatType::LostShipsCount);
+
+        lost_ship_wrapper(ctx, param, SUBJECT)
     }
 
     pub async fn friends_char(ctx: Context, id: Param) -> impl Responder {
@@ -234,6 +249,12 @@ pub mod alliance {
         ctx.notify(SUBJECT, StatType::ActivityHourlyCount);
 
         activity_hourly_wrapper(ctx, id, SUBJECT)
+    }
+
+    pub async fn lost_ship(ctx: Context, param: Param2) -> impl Responder {
+        ctx.notify(SUBJECT, StatType::LostShipsCount);
+
+        lost_ship_wrapper(ctx, param, SUBJECT)
     }
 
     pub async fn friends_char(ctx: Context, id: Param) -> impl Responder {
@@ -402,6 +423,8 @@ impl Activity {
     }
 }
 
+
+/******************************************************************************/
 fn activity_impl(ctx: Context, id: Param, sbj: QuerySubject) -> anyhow::Result<Activity> {
     let id = id.parse::<i32>()?;
     let pool = ctx.get_pool();
@@ -485,3 +508,25 @@ fn activity_hourly_wrapper(ctx: Context, id: Param, sbj: QuerySubject) -> impl R
         .content_type(ContentType::json())
         .body(json)
 }
+/******************************************************************************/
+fn lost_ship_impl(ctx: Context, param: Param2, sbj: QuerySubject) -> anyhow::Result<Vec<database::Killmail>> {
+    let (id_str, ship_id_str) = param.into_inner();
+    let id = id_str.parse::<i32>()?;
+    let ship_id = ship_id_str.parse::<i32>()?;
+    let pool = ctx.get_pool();
+    let conn = pool.get()?;
+    database::lost_ships(&conn, id, ship_id, sbj)
+}
+
+fn lost_ship_wrapper(ctx: Context, param: Param2, sbj: QuerySubject) -> impl Responder {
+    let json = match lost_ship_impl(ctx, param, sbj) {
+        Ok(report) => serde_json::to_string(&report).unwrap(),
+        Err(what) => Status::json(format!("{what}")),
+    };
+
+    HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .body(json)
+}
+
+/******************************************************************************/
