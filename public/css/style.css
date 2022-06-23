@@ -8,6 +8,18 @@ p {
     margin-block: auto;
 }
 
+table,
+td,
+th {
+    border: 1px solid;
+    padding: 5px;
+}
+
+table {
+    /* width: 80%; */
+    border-collapse: collapse;
+}
+
 .activity a {
     color: rgb(250, 183, 216);
 }
