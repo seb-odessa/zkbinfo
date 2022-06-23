@@ -14,18 +14,18 @@ pub enum SearchCategory {
     Station,
 }
 impl SearchCategory {
-    pub fn category(category: SearchCategory) -> &'static str {
+    pub fn category(category: &SearchCategory) -> &'static str {
         match category {
-            SearchCategory::Agent => "categories=agent",
-            SearchCategory::Alliance => "categories=alliance",
-            SearchCategory::Character => "categories=character",
-            SearchCategory::Constellation => "categories=constellation",
-            SearchCategory::Corporation => "categories=corporation",
-            SearchCategory::Faction => "categories=faction",
-            SearchCategory::InventoryType => "categories=inventory_type",
-            SearchCategory::Region => "categories=region",
-            SearchCategory::SolarSystem => "categories=solar_system",
-            SearchCategory::Station => "categories=station",
+            SearchCategory::Agent => "agent",
+            SearchCategory::Alliance => "alliance",
+            SearchCategory::Character => "character",
+            SearchCategory::Constellation => "constellation",
+            SearchCategory::Corporation => "corporation",
+            SearchCategory::Faction => "faction",
+            SearchCategory::InventoryType => "inventory_type",
+            SearchCategory::Region => "region",
+            SearchCategory::SolarSystem => "solar_system",
+            SearchCategory::Station => "station",
         }
     }
     pub fn from(category: &str) -> Option<SearchCategory> {
@@ -61,9 +61,9 @@ pub struct SearchResult {
 impl SearchResult {
     pub async fn from(name: &String, category: SearchCategory) -> anyhow::Result<Self> {
         let name = urlencoding::encode(name);
-        let category = SearchCategory::category(category);
+        let category = SearchCategory::category(&category);
         let url = format!(
-            "{EVE_TECH_ROOT}/search/?{category}&{EVE_TECH_SERVER}&{EVE_TECH_SEARCH}&search={name}"
+            "{EVE_TECH_ROOT}/search/?categories={category}&{EVE_TECH_SERVER}&{EVE_TECH_SEARCH}&search={name}"
         );
         info!("{url}");
         reqwest::get(&url)

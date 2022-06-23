@@ -11,9 +11,9 @@ use crate::evetech::CharacterPortrait;
 use crate::evetech::Corporation;
 use crate::evetech::CorporationIcon;
 
+use crate::evetech::Names;
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
-use crate::evetech::Names;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterProps {
@@ -146,6 +146,28 @@ impl AllianceProps {
     }
 }
 
+fn query_all_ids(killmails: &Vec<Killmail>) -> Vec<i32> {
+    let mut ids = Vec::with_capacity(5 * killmails.len());
+    for row in killmails {
+        if let Some(character_id) = row.character_id {
+            ids.push(character_id);
+        }
+        if let Some(corporation_id) = row.corporation_id {
+            ids.push(corporation_id);
+        }
+        if let Some(alliance_id) = row.alliance_id {
+            ids.push(alliance_id);
+        }
+        if let Some(ship_type_id) = row.ship_type_id {
+            ids.push(ship_type_id);
+        }
+        ids.push(row.solar_system_id);
+    }
+    ids.sort();
+    ids.dedup();
+    return ids;
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct Killmail {
     killmail_id: i32,
@@ -160,38 +182,17 @@ pub struct Killmail {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CharacterLostProps {
+pub struct LostProps {
     name: String,
     ship_name: String,
     killmails: Vec<Killmail>,
-    ids: String
+    ids: String,
 }
 
-impl CharacterLostProps {
-    fn ids(killmails: &Vec<Killmail>) -> Vec<i32> {
-        let mut ids = Vec::with_capacity(5 * killmails.len());
-        for row in killmails {
-            if let Some(character_id) = row.character_id {
-                ids.push(character_id);
-            }
-            if let Some(corporation_id) = row.corporation_id {
-                ids.push(corporation_id);
-            }
-            if let Some(alliance_id) = row.alliance_id {
-                ids.push(alliance_id);
-            }
-            if let Some(ship_type_id) = row.ship_type_id {
-                ids.push(ship_type_id);
-            }
-            ids.push(row.solar_system_id);
-        }
-        ids.sort();
-        ids.dedup();
-        return ids;
-    }
-
-    pub async fn from(id: i32, ship_id: i32) -> anyhow::Result<Self> {
-        let url = format!("http://zkbinfo:8080/api/character/{id}/lost/{ship_id}/");
+impl LostProps {
+    pub async fn from(id: i32, ship_id: i32, category: SearchCategory) -> anyhow::Result<Self> {
+        let category_path = SearchCategory::category(&category);
+        let url = format!("http://zkbinfo:8080/api/{category_path}/{id}/lost/{ship_id}/");
         info!("{url}");
         let killmails = reqwest::get(&url)
             .await?
@@ -200,9 +201,9 @@ impl CharacterLostProps {
             .map_err(|e| anyhow!(e))?;
 
         let names = Names::from(&vec![id, ship_id]).await?;
-        let ids = Self::ids(&killmails);
+        let ids = query_all_ids(&killmails);
         Ok(Self {
-            name: names.get_name(SearchCategory::Character, id)?,
+            name: names.get_name(category, id)?,
             ship_name: names.get_name(SearchCategory::InventoryType, ship_id)?,
             killmails: killmails,
             ids: serde_json::to_string(&ids)?,

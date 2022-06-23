@@ -91,7 +91,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = wins_ships.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/{{corporation_id}}/lost/${id}/">${name} (${count})</a>`;
                                 const element = `${wins_prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });
@@ -125,7 +125,7 @@
                                 const id = obj.id;
                                 const name = obj.name;
                                 const count = losses_ships.get(`${id}`);
-                                const href = `<a href="https://zkillboard.com/ship/${id}/">${name} (${count})</a>`;
+                                const href = `<a href="/gui/corporation/{{corporation_id}}/lost/${id}/">${name} (${count})</a>`;
                                 const element = `${losses_prefix}_${id}`;
                                 document.getElementById(element).innerHTML = href;
                             });
