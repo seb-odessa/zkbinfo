@@ -48,13 +48,25 @@ async fn main() -> anyhow::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(
-                Cors::permissive() //TODO Rwconfigure due to unsafe
+                Cors::permissive(), //TODO Rwconfigure due to unsafe
             )
             .app_data(context.clone())
             .service(
                 web::scope("/api")
                     .route("/statistic", web::get().to(api::statistic))
                     .route("/killmail/ids/{date}/", web::get().to(api::saved_ids))
+                    .route(
+                        "/character/{id}/lost/{ship}/",
+                        web::get().to(api::character::lost_ship),
+                    )
+                    .route(
+                        "/corporation/{id}/lost/{ship}/",
+                        web::get().to(api::character::lost_ship),
+                    )
+                    .route(
+                        "/alliance/{id}/lost/{ship}/",
+                        web::get().to(api::character::lost_ship),
+                    )
                     .route(
                         "/character/activity/{id}/",
                         web::get().to(api::character::activity),

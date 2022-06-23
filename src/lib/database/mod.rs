@@ -1,11 +1,12 @@
 use anyhow::anyhow;
 use chrono::NaiveDate;
+use serde::Serialize;
 
 use r2d2;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{named_params, Connection};
 
-use crate::evetech::Killmail;
+use crate::evetech;
 
 const HISTORY_DEPTH: &str = "'-30 days'";
 
@@ -92,7 +93,8 @@ pub fn create_pool(url: &str) -> anyhow::Result<SqlitePool> {
 }
 
 pub fn cleanup(conn: &Connection) -> anyhow::Result<()> {
-        conn.execute_batch("
+    conn.execute_batch(
+        "
         DELETE FROM participants
         WHERE killmail_id IN (
 	        SELECT killmail_id
@@ -102,11 +104,13 @@ pub fn cleanup(conn: &Connection) -> anyhow::Result<()> {
 
         DELETE FROM killmails
 	    WHERE killmail_time < date('now', '-360 days');
-    ").map_err(|e| anyhow!(e))?;
+    ",
+    )
+    .map_err(|e| anyhow!(e))?;
     Ok(())
 }
 
-pub fn insert(conn: &Connection, killmail: Killmail) -> anyhow::Result<()> {
+pub fn insert(conn: &Connection, killmail: evetech::Killmail) -> anyhow::Result<()> {
     const INSERT_KILLMAIL: &str = r"INSERT OR IGNORE INTO killmails VALUES (
         :killmail_id,
         :killmail_time,
@@ -247,4 +251,87 @@ pub fn activity(conn: &Connection, id: i32, sbj: QuerySubject) -> anyhow::Result
     let mut stmt = conn.prepare(&sql)?;
     let iter = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
     Ok(iter.map(|res| res.unwrap()).collect())
+}
+
+#[derive(Debug, Serialize, Clone, Default)]
+pub struct Killmail {
+    killmail_id: i32,
+    character_id: Option<i32>,
+    corporation_id: Option<i32>,
+    alliance_id: Option<i32>,
+    ship_type_id: Option<i32>,
+    damage: i32,
+    is_victim: i32,
+    solar_system_id: i32,
+    killmail_time: String,
+}
+impl Killmail {
+    pub fn from(
+        row: (
+            i32,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            i32,
+            i32,
+            i32,
+            String,
+        ),
+    ) -> Self {
+        let (
+            killmail_id,
+            character_id,
+            corporation_id,
+            alliance_id,
+            ship_type_id,
+            damage,
+            is_victim,
+            solar_system_id,
+            killmail_time,
+        ) = row;
+
+        Self {
+            killmail_id,
+            character_id,
+            corporation_id,
+            alliance_id,
+            ship_type_id,
+            damage,
+            is_victim,
+            solar_system_id,
+            killmail_time,
+        }
+    }
+}
+
+pub fn lost_ships(
+    conn: &Connection,
+    id: i32,
+    ship: i32,
+    sbj: QuerySubject,
+) -> anyhow::Result<Vec<Killmail>> {
+    let id_field = QuerySubject::get_field(&sbj);
+    let sql = format!(
+        "SELECT K.killmail_id, character_id, corporation_id, alliance_id, ship_type_id, damage, is_victim, solar_system_id, killmail_time
+         FROM participants P JOIN killmails K ON K.killmail_id = P.killmail_id
+         WHERE {id_field} = {id} AND ship_type_id = {ship} AND is_victim = 1
+         ORDER BY killmail_time DESC;"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let iter = stmt.query_map([], |row| {
+        Ok(Killmail::from((
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            row.get(3)?,
+            row.get(4)?,
+            row.get(5)?,
+            row.get(6)?,
+            row.get(7)?,
+            row.get(8)?,
+        )))
+    })?;
+    Ok(iter.map(|res| res.unwrap()).collect())
+    // Err(anyhow!("NotImpl"))
 }
