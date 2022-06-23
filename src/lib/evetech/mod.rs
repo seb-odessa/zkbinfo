@@ -12,6 +12,7 @@ mod corporation;
 mod killmail;
 mod images;
 mod search;
+mod names;
 
 pub use alliance::Alliance;
 pub use character::Character;
@@ -23,3 +24,4 @@ pub use images::AllianceIcon;
 
 pub use search::SearchCategory;
 pub use search::SearchResult;
+pub use names::Names;

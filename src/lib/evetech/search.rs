@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Hash)]
 pub enum SearchCategory {
     Agent,
     Alliance,
@@ -26,6 +26,21 @@ impl SearchCategory {
             SearchCategory::Region => "categories=region",
             SearchCategory::SolarSystem => "categories=solar_system",
             SearchCategory::Station => "categories=station",
+        }
+    }
+    pub fn from(category: &str) -> Option<SearchCategory> {
+        match category {
+            "agent" => Some(SearchCategory::Agent),
+            "alliance" => Some(SearchCategory::Alliance),
+            "character" => Some(SearchCategory::Character),
+            "constellation" => Some(SearchCategory::Constellation),
+            "corporation" => Some(SearchCategory::Corporation),
+            "faction" => Some(SearchCategory::Faction),
+            "inventory_type" => Some(SearchCategory::InventoryType),
+            "region" => Some(SearchCategory::Region),
+            "solar_system" => Some(SearchCategory::SolarSystem),
+            "station" => Some(SearchCategory::Station),
+            _ => None
         }
     }
 }
