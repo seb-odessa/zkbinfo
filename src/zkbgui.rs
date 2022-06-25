@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
             .service(who)
             .service(who_report)
             .service(report)
-            .service(report2)
+            .service(report_by_id)
             .service(lost_ships)
     })
     .bind((host.as_str(), port))?
@@ -99,7 +99,7 @@ async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResp
 }
 
 #[get("/gui/{target}/id/{id}/")]
-async fn report2(ctx: Context<'_>, path: web::Path<(String, i32)>) -> HttpResponse {
+async fn report_by_id(ctx: Context<'_>, path: web::Path<(String, i32)>) -> HttpResponse {
     let (target, id) = path.into_inner();
     let body = match target.as_str() {
         "character" => match CharacterProps::from(id).await {
