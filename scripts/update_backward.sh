@@ -1,6 +1,4 @@
-#/bin/bash
-
-
+#!/bin/bash
 
 CURRENT=${1:-$(date +'%Y-%m-%d' -d "1 day ago")}
 FINISH=${2:-$(date +'%Y-%m-%d' -d "1 year ago")}
