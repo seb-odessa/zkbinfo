@@ -1,7 +1,7 @@
 
 use actix_files::Files;
 use actix_files::NamedFile;
-use actix_web::{get, web, App, Responder, HttpResponse, HttpServer};
+use actix_web::{get, post, web, App, Responder, HttpResponse, HttpServer};
 use anyhow::anyhow;
 
 use handlebars::Handlebars;
@@ -13,6 +13,8 @@ use lib::gui::CharacterProps;
 use lib::gui::CorporationProps;
 use lib::gui::AllianceProps;
 use lib::gui::LostProps;
+use lib::gui::WhoFormData;
+use lib::gui::WhoProps;
 use lib::evetech::SearchCategory;
 
 use std::env;
@@ -40,6 +42,8 @@ async fn main() -> anyhow::Result<()> {
             .service(Files::new("/css", "./public/css").show_files_listing())
             .service(Files::new("/js", "./public/js").show_files_listing())
             .service(favicon)
+            .service(who)
+            .service(who_report)
             .service(report)
             .service(report2)
             .service(lost_ships)
@@ -54,6 +58,24 @@ async fn main() -> anyhow::Result<()> {
 async fn favicon() -> impl Responder {
     NamedFile::open_async("./public/favicon.ico").await
 }
+
+#[get("/gui/who/")]
+async fn who(ctx: Context<'_>) -> HttpResponse {
+    let body = wrapper(ctx, "who", &{});
+    HttpResponse::Ok().body(body)
+}
+
+
+#[post("/gui/who/report/")]
+async fn who_report(ctx: Context<'_>, query: web::Form<WhoFormData>) -> HttpResponse {
+    info!("{:?}", query);
+    let body = match WhoProps::from(query.into_inner()).await {
+            Ok(prop) => wrapper(ctx, "report", &prop),
+            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+        };
+    HttpResponse::Ok().body(body)
+}
+
 
 #[get("/gui/{target}/{name}/")]
 async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResponse {

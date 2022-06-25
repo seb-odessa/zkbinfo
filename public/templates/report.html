@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Who is Here</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <script type="text/javascript" src="/js/script.js"></script>
+    <div class="content">
+        <h3>Who is Here</h3>
+
+        {{#if characters}}
+        <table>
+            <tr>
+                <th>Character</th>
+                <th>Corporation</th>
+                <th>Alliance</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Wins Percent</th>
+                <th>Losses Percent</th>
+                <th>Damage Dealt</th>
+                <th>Damage Received</th>
+                <th>Damage Dealt Percent</th>
+                <th>Damage Received Percent</th>
+
+            </tr>
+            {{#each characters}}
+            <tr>
+                <td>
+                    <a href="/gui/character/id/{{character_id}}/">{{character_name}}</a>
+                </td>
+                <td>
+                    <a href="/gui/corporation/id/{{corporation_id}}/">
+                        <div class="{{corporation_id}}" div style="display: inline">{{corporation_name}}</div>
+                    </a>
+                </td>
+                <td>
+                    {{#if alliance_id}}
+                    <a href="/gui/alliance/id/{{alliance_id}}/">
+                        <div class="{{alliance_id}}" div style="display: inline">{{alliance_name}}</div>
+                    </a>
+                    {{/if}}
+                </td>
+                <td align="right"> {{wins_count}} </td>
+                <td align="right"> {{losses_count}} </td>
+                <td align="right"> {{wins_percent}} </td>
+                <td align="right"> {{losses_percent}} </td>
+                <td align="right"> {{damage_dealt}} </td>
+                <td align="right"> {{damage_received}} </td>
+                <td align="right"> {{damage_dealt_percent}} </td>
+                <td align="right"> {{damage_received_percent}} </td>
+
+            </tr>
+            {{/each}}
+        </table>
+        {{else}}
+        <p> No characters found</p>
+        {{/if}}
+    </div>
+</body>
+
+</html>

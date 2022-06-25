@@ -59,8 +59,8 @@ pub struct SearchResult {
     station: Option<Vec<i32>>,
 }
 impl SearchResult {
-    pub async fn from(name: &String, category: SearchCategory) -> anyhow::Result<Self> {
-        let name = urlencoding::encode(name);
+    pub async fn from(name: String, category: SearchCategory) -> anyhow::Result<Self> {
+        let name = urlencoding::encode(&name);
         let category = SearchCategory::category(&category);
         let url = format!(
             "{EVE_TECH_ROOT}/search/?categories={category}&{EVE_TECH_SERVER}&{EVE_TECH_SEARCH}&search={name}"
@@ -108,7 +108,7 @@ mod tests {
     #[tokio::test]
     async fn from() -> Result<(), String> {
         let name = String::from("Seb Odessa");
-        let search = SearchResult::from(&name, SearchCategory::Character)
+        let search = SearchResult::from(name, SearchCategory::Character)
             .await
             .map_err(|e| format!("{e}"))?;
         let ids = search
@@ -125,7 +125,7 @@ mod tests {
     #[tokio::test]
     async fn get_character_id() -> Result<(), String> {
         let name = String::from("Seb Odessa");
-        let search = SearchResult::from(&name, SearchCategory::Character)
+        let search = SearchResult::from(name, SearchCategory::Character)
             .await
             .map_err(|e| format!("{e}"))?;
 

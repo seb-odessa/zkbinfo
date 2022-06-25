@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use chrono::NaiveDateTime;
+use futures::future::join_all;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -14,6 +15,8 @@ use crate::evetech::CorporationIcon;
 use crate::evetech::Names;
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
+
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterProps {
@@ -31,7 +34,7 @@ pub struct CharacterProps {
 
 impl CharacterProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(&name, SearchCategory::Character)
+        let id = SearchResult::from(name, SearchCategory::Character)
             .await?
             .get_character_id()?;
         Self::from(id).await
@@ -74,7 +77,7 @@ pub struct CorporationProps {
 
 impl CorporationProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(&name, SearchCategory::Corporation)
+        let id = SearchResult::from(name, SearchCategory::Corporation)
             .await?
             .get_corporation_id()?;
         Self::from(id).await
@@ -121,7 +124,7 @@ pub struct AllianceProps {
 }
 impl AllianceProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(&name, SearchCategory::Alliance)
+        let id = SearchResult::from(name, SearchCategory::Alliance)
             .await?
             .get_alliance_id()?;
         Self::from(id).await
@@ -208,5 +211,214 @@ impl LostProps {
             killmails: killmails,
             ids: serde_json::to_string(&ids)?,
         })
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct WhoFormData {
+    names: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct WhoIsCharacter {
+    character_id: i32,
+    character_name: String,
+    corporation_id: i32,
+    corporation_name: String,
+    alliance_id: i32,
+    alliance_name: String,
+    wins_count: i32,
+    losses_count: i32,
+    wins_percent: String,
+    losses_percent: String,
+
+    damage_dealt: i32,
+    damage_received: i32,
+    damage_dealt_percent: String,
+    damage_received_percent: String,
+}
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct Wins {
+    total_count: i32,
+    total_damage: i32,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct Losses {
+    total_count: i32,
+    total_damage: i32,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct Activity {
+    id: i32,
+    wins: Wins,
+    losses: Losses,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WhoProps {
+    characters: Vec<WhoIsCharacter>,
+}
+impl WhoProps {
+    async fn activity(id: i32) -> anyhow::Result<Activity> {
+        let url = format!("http://zkbinfo:8080/api/character/activity/{id}/");
+        info!("{url}");
+        reqwest::get(&url)
+            .await?
+            .json::<Activity>()
+            .await
+            .map_err(|e| anyhow!(e))
+    }
+
+    pub async fn from(data: WhoFormData) -> anyhow::Result<Self> {
+        let get_ids_tasks = data
+            .names
+            .split("\r\n")
+            .map(|name| String::from(name))
+            .filter(|name| !name.is_empty())
+            .map(|name| SearchResult::from(name, SearchCategory::Character))
+            .collect::<Vec<_>>();
+
+        let ids = join_all(get_ids_tasks)
+            .await
+            .into_iter()
+            .filter(|search_result| search_result.is_ok())
+            .map(|search_result| search_result.unwrap().get_character_id())
+            .map(|maybe_id| maybe_id.unwrap_or_default())
+            .filter(|id| *id != 0)
+            .collect::<Vec<i32>>();
+
+        let get_chars_tasks = join_all(ids.iter().map(|id| Character::from(*id))).await;
+        let get_activity_tasks = join_all(ids.iter().map(|id| Self::activity(*id))).await;
+        let char_map = ids
+            .iter()
+            .zip(
+                get_chars_tasks
+                    .into_iter()
+                    .map(|result| result.unwrap_or_default()),
+            )
+            .collect::<HashMap<&i32, Character>>();
+
+        let activity_map = ids
+            .iter()
+            .zip(
+                get_activity_tasks
+                    .into_iter()
+                    .map(|result| result.unwrap_or_default()),
+            )
+            .collect::<HashMap<&i32, Activity>>();
+
+        let mut corp_ids = char_map
+            .values()
+            .map(|character| character.corporation_id)
+            .collect::<Vec<i32>>();
+        corp_ids.sort();
+        corp_ids.dedup();
+
+        let get_corps_tasks = join_all(corp_ids.iter().map(|id| Corporation::from(*id))).await;
+        let corp_map = corp_ids
+            .into_iter()
+            .zip(
+                get_corps_tasks
+                    .into_iter()
+                    .map(|result| result.unwrap_or_default()),
+            )
+            .collect::<HashMap<i32, Corporation>>();
+
+        let mut alli_ids = corp_map
+            .values()
+            .map(|corporation| corporation.alliance_id.unwrap_or_default())
+            .filter(|id| *id != 0)
+            .collect::<Vec<i32>>();
+        alli_ids.sort();
+        alli_ids.dedup();
+
+        let get_allis_tasks = join_all(alli_ids.iter().map(|id| Alliance::from(*id))).await;
+        let alli_map = alli_ids
+            .into_iter()
+            .zip(
+                get_allis_tasks
+                    .into_iter()
+                    .map(|result| result.unwrap_or_default()),
+            )
+            .collect::<HashMap<i32, Alliance>>();
+
+        let mut characters = Vec::new();
+        for (id, character) in char_map {
+            if character.name.is_empty() {
+                continue;
+            }
+            let corporation_id = character.corporation_id;
+            let corporation_name: String = corp_map
+                .get(&character.corporation_id)
+                .and_then(|corp| Some(corp.name.clone()))
+                .unwrap_or_default();
+
+            let alliance_id = character.alliance_id.unwrap_or_default();
+            let alliance_name: String = alli_map
+                .get(&character.alliance_id.unwrap_or_default())
+                .and_then(|corp| Some(corp.name.clone()))
+                .unwrap_or_default();
+
+            let activity: Activity = activity_map.get(&id).cloned().unwrap_or_default();
+            let total_combats = (activity.wins.total_count + activity.losses.total_count) as f32;
+            let wins_percent = if total_combats > 0.0 {
+                format!("{:.2}%", 100.0 * activity.wins.total_count as f32  / total_combats)
+            } else {
+                format!("")
+            };
+            let losses_percent = if total_combats > 0.0 {
+                format!("{:.2}%", 100.0 * activity.losses.total_count as f32  / total_combats)
+            } else {
+                format!("")
+            };
+
+            let total_damage = (activity.wins.total_damage + activity.losses.total_damage) as f32;
+            let damage_dealt_percent = if total_damage > 0.0 {
+                format!("{:.2}%", 100.0 * activity.wins.total_damage as f32 / total_damage)
+            } else {
+                format!("")
+            };
+            let damage_received_percent = if total_damage > 0.0 {
+                format!("{:.2}%", 100.0 * activity.losses.total_damage as f32  / total_damage)
+            } else {
+                format!("")
+            };
+
+            let character = WhoIsCharacter {
+                character_id: *id,
+                character_name: character.name,
+                corporation_id: corporation_id,
+                corporation_name: corporation_name,
+                alliance_id: alliance_id,
+                alliance_name: alliance_name,
+                wins_count: activity.wins.total_count,
+                losses_count: activity.losses.total_count,
+                wins_percent: wins_percent,
+                losses_percent: losses_percent,
+                damage_dealt: activity.wins.total_damage,
+                damage_received: activity.losses.total_damage,
+                damage_dealt_percent: damage_dealt_percent,
+                damage_received_percent: damage_received_percent,
+            };
+            characters.push(character);
+        }
+
+        characters.sort_by(|a, b| {
+            if a.alliance_name == b.alliance_name {
+                if a.corporation_name == b.corporation_name {
+                    a.character_name.cmp(&b.character_name)
+                } else {
+                    a.corporation_name.cmp(&b.corporation_name)
+                }
+            } else {
+                a.alliance_name.cmp(&b.alliance_name)
+            }
+        });
+
+        Ok(Self { characters })
+
+        // Err(anyhow!("not impl"))
     }
 }
