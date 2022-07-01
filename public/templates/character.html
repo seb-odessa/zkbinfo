@@ -59,6 +59,19 @@
                 <p>Security Status: {{character_security_status}}</p>
             </div>
         </div>
+        <div class="query">
+            <script type="text/javascript">
+                function get_action(form) {
+                    const character = document.getElementById("character_name").value
+                    form.action = "/gui/character/" + character + "/";
+                    form.method = "get";
+                }
+            </script>
+            <form onsubmit="get_action(this);">
+                <input type="text" id="character_name" placeholder="Search Character ...">
+                <input type="submit" hidden />
+            </form>
+        </div>
     </div>
     <div class="activity">
         <h4>Activity last 30 days:</h4>

@@ -6,6 +6,29 @@ Consider to add to the /etc/hosts
 ```
 And then use next links:
 
+### GUI Section
+
+- Perform analysis against local or any list of character names with /r/n delimiter
+
+   http://zkbinfo:8088/gui/who/
+
+- Get information abount character
+
+   http://zkbinfo:8088/gui/character/Seb Odessa/ (http://zkbinfo:8088/gui/character/id/2114350216/)
+
+- Get information abount corporation
+http://zkbinfo:8088/gui/corporation/SO%20Corporation/ (http://zkbinfo:8088/gui/corporation/id/98573194/)
+
+- Get information abount alliance
+
+http://zkbinfo:8088/gui/alliance/Train%20Wreck./ (http://zkbinfo:8088/gui/alliance/id/99011258/)
+
+
+
+
+
+
+
 ### API section
 ##### Get zkbinfo statistic
 http://zkbinfo:8080/api/statistic
