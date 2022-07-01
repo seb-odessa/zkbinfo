@@ -27,6 +27,19 @@
                 <p>Founded: {{alliance_founded}}</p>
             </div>
         </div>
+        <div class="query">
+            <script type="text/javascript">
+                function get_action(form) {
+                    const alliance = document.getElementById("alliance_name").value
+                    form.action = "/gui/alliance/" + alliance + "/";
+                    form.method = "get";
+                }
+            </script>
+            <form onsubmit="get_action(this);">
+                <input type="text" id="alliance_name" placeholder="Search Alliance ...">
+                <input type="submit" hidden />
+            </form>
+        </div>
     </div>
     <div class="activity">
         <h4>Activity last 30 days:</h4>

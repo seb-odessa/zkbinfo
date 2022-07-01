@@ -47,6 +47,19 @@
 
             </div>
         </div>
+        <div class="query">
+            <script type="text/javascript">
+                function get_action(form) {
+                    const corporation = document.getElementById("corporation_name").value
+                    form.action = "/gui/corporation/" + corporation + "/";
+                    form.method = "get";
+                }
+            </script>
+            <form onsubmit="get_action(this);">
+                <input type="text" id="corporation_name" placeholder="Search Corporation ...">
+                <input type="submit" hidden />
+            </form>
+        </div>
     </div>
     {{#if corporation_description}}
     <div class="description">
