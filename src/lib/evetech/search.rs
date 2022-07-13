@@ -47,28 +47,28 @@ impl SearchCategory {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct EveItem {
-    id: i32,
-    name: String
+    pub id: i32,
+    pub name: String
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct SearchResult {
-    agents: Option<Vec<EveItem>>,
-    alliances: Option<Vec<EveItem>>,
-    characters: Option<Vec<EveItem>>,
-    constellations: Option<Vec<EveItem>>,
-    corporations: Option<Vec<EveItem>>,
-    factions: Option<Vec<EveItem>>,
-    inventory_types: Option<Vec<EveItem>>,
-    regions: Option<Vec<EveItem>>,
-    systems: Option<Vec<EveItem>>,
-    stations: Option<Vec<EveItem>>,
+    pub agents: Option<Vec<EveItem>>,
+    pub alliances: Option<Vec<EveItem>>,
+    pub characters: Option<Vec<EveItem>>,
+    pub constellations: Option<Vec<EveItem>>,
+    pub corporations: Option<Vec<EveItem>>,
+    pub factions: Option<Vec<EveItem>>,
+    pub inventory_types: Option<Vec<EveItem>>,
+    pub regions: Option<Vec<EveItem>>,
+    pub systems: Option<Vec<EveItem>>,
+    pub stations: Option<Vec<EveItem>>,
 }
 impl SearchResult {
     pub async fn from(name: String, _category: SearchCategory) -> anyhow::Result<Self> {
         let url = format!("{EVE_TECH_ROOT}/universe/ids/?{EVE_TECH_SERVER}");
         info!("{url}");
-        let query = vec!(name);
+        let query = vec!(name.clone());
         reqwest::Client::new()
             .post(&url)
             .json(&query)
