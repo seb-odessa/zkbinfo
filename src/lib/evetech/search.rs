@@ -46,57 +46,64 @@ impl SearchCategory {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
+pub struct EveItem {
+    id: i32,
+    name: String
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 pub struct SearchResult {
-    agent: Option<Vec<i32>>,
-    alliance: Option<Vec<i32>>,
-    character: Option<Vec<i32>>,
-    constellation: Option<Vec<i32>>,
-    corporation: Option<Vec<i32>>,
-    faction: Option<Vec<i32>>,
-    inventory_type: Option<Vec<i32>>,
-    region: Option<Vec<i32>>,
-    solar_system: Option<Vec<i32>>,
-    station: Option<Vec<i32>>,
+    agents: Option<Vec<EveItem>>,
+    alliances: Option<Vec<EveItem>>,
+    characters: Option<Vec<EveItem>>,
+    constellations: Option<Vec<EveItem>>,
+    corporations: Option<Vec<EveItem>>,
+    factions: Option<Vec<EveItem>>,
+    inventory_types: Option<Vec<EveItem>>,
+    regions: Option<Vec<EveItem>>,
+    systems: Option<Vec<EveItem>>,
+    stations: Option<Vec<EveItem>>,
 }
 impl SearchResult {
-    pub async fn from(name: String, category: SearchCategory) -> anyhow::Result<Self> {
-        let name = urlencoding::encode(&name);
-        let category = SearchCategory::category(&category);
-        let url = format!(
-            "{EVE_TECH_ROOT}/search/?categories={category}&{EVE_TECH_SERVER}&{EVE_TECH_SEARCH}&search={name}"
-        );
+    pub async fn from(name: String, _category: SearchCategory) -> anyhow::Result<Self> {
+        let url = format!("{EVE_TECH_ROOT}/universe/ids/?{EVE_TECH_SERVER}");
         info!("{url}");
-        reqwest::get(&url)
+        let query = vec!(name);
+        reqwest::Client::new()
+            .post(&url)
+            .json(&query)
+            .send()
             .await?
             .json::<Self>()
             .await
             .map_err(|e| anyhow!(e))
+
     }
 
     pub fn get_character_id(&self) -> anyhow::Result<i32> {
-        self.character
+        self.characters
             .iter()
             .next()
-            .and_then(|ids| ids.iter().next())
-            .and_then(|id| Some(*id))
+            .and_then(|items| items.iter().next())
+            .and_then(|item| Some(item.id))
             .ok_or(anyhow!("Character was not found"))
     }
 
     pub fn get_corporation_id(&self) -> anyhow::Result<i32> {
-        self.corporation
+        self.corporations
             .iter()
             .next()
-            .and_then(|ids| ids.iter().next())
-            .and_then(|id| Some(*id))
+            .and_then(|items| items.iter().next())
+            .and_then(|item| Some(item.id))
             .ok_or(anyhow!("Corporation was not found"))
     }
 
     pub fn get_alliance_id(&self) -> anyhow::Result<i32> {
-        self.alliance
+        self.alliances
             .iter()
             .next()
-            .and_then(|ids| ids.iter().next())
-            .and_then(|id| Some(*id))
+            .and_then(|items| items.iter().next())
+            .and_then(|item| Some(item.id))
             .ok_or(anyhow!("Alliance was not found"))
     }
 }
@@ -111,14 +118,14 @@ mod tests {
         let search = SearchResult::from(name, SearchCategory::Character)
             .await
             .map_err(|e| format!("{e}"))?;
-        let ids = search
-            .character
+        let items = search
+            .characters
             .ok_or("The SearchResult::charater is None")?;
-        let id = ids
+        let item = items
             .into_iter()
             .next()
             .ok_or("The SearchResult::charater is empty")?;
-        assert_eq!(2114350216, id);
+        assert_eq!(2114350216, item.id);
         Ok(())
     }
 
