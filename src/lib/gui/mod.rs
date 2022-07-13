@@ -16,7 +16,55 @@ use crate::evetech::Names;
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
 
+use lazy_static::lazy_static;
+
 use std::collections::HashMap;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref CHARACTERS: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
+}
+
+struct NameProvider;
+
+impl NameProvider {
+    fn find_id(name: String, category: SearchCategory) -> Option<i32> {
+        match category {
+            SearchCategory::Character => {
+                if let Ok(chars) = CHARACTERS.lock() {
+                    return chars.get(&name).and_then(|id| Some(*id));
+                }
+            }
+            _ => {
+                return None;
+            }
+        }
+        return None;
+    }
+
+    fn update(result: SearchResult) -> anyhow::Result<()> {
+        if let Some(characters) = result.characters {
+            if let Ok(mut chars_cache) = CHARACTERS.lock() {
+                for item in characters {
+                    chars_cache.entry(item.name).or_insert(item.id);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_id(name: String, category: SearchCategory) -> anyhow::Result<i32> {
+        if let Some(id) = Self::find_id(name.clone(), category.clone()) {
+            return Ok(id);
+        }
+        let sr = SearchResult::from(name.clone(), category.clone()).await?;
+        Self::update(sr)?;
+        Self::find_id(name.clone(), category)
+            .ok_or(format!("Can't find id for {name}"))
+            .map_err(|e| anyhow!(e))
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterProps {
@@ -34,9 +82,7 @@ pub struct CharacterProps {
 
 impl CharacterProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(name, SearchCategory::Character)
-            .await?
-            .get_character_id()?;
+        let id = NameProvider::get_id(name, SearchCategory::Character).await?;
         Self::from(id).await
     }
     pub async fn from(id: i32) -> anyhow::Result<Self> {
@@ -364,24 +410,36 @@ impl WhoProps {
             let activity: Activity = activity_map.get(&id).cloned().unwrap_or_default();
             let total_combats = (activity.wins.total_count + activity.losses.total_count) as f32;
             let wins_percent = if total_combats > 0.0 {
-                format!("{:.2}%", 100.0 * activity.wins.total_count as f32  / total_combats)
+                format!(
+                    "{:.2}%",
+                    100.0 * activity.wins.total_count as f32 / total_combats
+                )
             } else {
                 format!("")
             };
             let losses_percent = if total_combats > 0.0 {
-                format!("{:.2}%", 100.0 * activity.losses.total_count as f32  / total_combats)
+                format!(
+                    "{:.2}%",
+                    100.0 * activity.losses.total_count as f32 / total_combats
+                )
             } else {
                 format!("")
             };
 
             let total_damage = (activity.wins.total_damage + activity.losses.total_damage) as f32;
             let damage_dealt_percent = if total_damage > 0.0 {
-                format!("{:.2}%", 100.0 * activity.wins.total_damage as f32 / total_damage)
+                format!(
+                    "{:.2}%",
+                    100.0 * activity.wins.total_damage as f32 / total_damage
+                )
             } else {
                 format!("")
             };
             let damage_received_percent = if total_damage > 0.0 {
-                format!("{:.2}%", 100.0 * activity.losses.total_damage as f32  / total_damage)
+                format!(
+                    "{:.2}%",
+                    100.0 * activity.losses.total_damage as f32 / total_damage
+                )
             } else {
                 format!("")
             };
@@ -419,6 +477,23 @@ impl WhoProps {
 
         Ok(Self { characters })
 
-        // Err(anyhow!("not impl"))
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn name_provider_get_id() -> Result<(), String> {
+        let name = String::from("Seb Odessa");
+        let id = NameProvider::get_id(name, SearchCategory::Character)
+            .await
+            .map_err(|e| format!("{e}"))?;
+
+
+        assert_eq!(2114350216, id);
+        Ok(())
     }
 }
