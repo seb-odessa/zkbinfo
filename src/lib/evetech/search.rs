@@ -89,23 +89,6 @@ impl SearchResult {
             .ok_or(anyhow!("Character was not found"))
     }
 
-    pub fn get_corporation_id(&self) -> anyhow::Result<i32> {
-        self.corporations
-            .iter()
-            .next()
-            .and_then(|items| items.iter().next())
-            .and_then(|item| Some(item.id))
-            .ok_or(anyhow!("Corporation was not found"))
-    }
-
-    pub fn get_alliance_id(&self) -> anyhow::Result<i32> {
-        self.alliances
-            .iter()
-            .next()
-            .and_then(|items| items.iter().next())
-            .and_then(|item| Some(item.id))
-            .ok_or(anyhow!("Alliance was not found"))
-    }
 }
 
 #[cfg(test)]
