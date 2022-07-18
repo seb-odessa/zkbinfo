@@ -23,6 +23,8 @@ use std::sync::Mutex;
 
 lazy_static! {
     static ref CHARACTERS: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
+    static ref CORPORATIONS: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
+    static ref ALLIANCES: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
 }
 
 struct NameProvider;
@@ -31,8 +33,18 @@ impl NameProvider {
     fn find_id(name: String, category: SearchCategory) -> Option<i32> {
         match category {
             SearchCategory::Character => {
-                if let Ok(chars) = CHARACTERS.lock() {
-                    return chars.get(&name).and_then(|id| Some(*id));
+                if let Ok(map) = CHARACTERS.lock() {
+                    return map.get(&name).and_then(|id| Some(*id));
+                }
+            }
+            SearchCategory::Corporation => {
+                if let Ok(map) = CORPORATIONS.lock() {
+                    return map.get(&name).and_then(|id| Some(*id));
+                }
+            }
+            SearchCategory::Alliance => {
+                if let Ok(map) = ALLIANCES.lock() {
+                    return map.get(&name).and_then(|id| Some(*id));
                 }
             }
             _ => {
@@ -43,10 +55,24 @@ impl NameProvider {
     }
 
     fn update(result: SearchResult) -> anyhow::Result<()> {
-        if let Some(characters) = result.characters {
-            if let Ok(mut chars_cache) = CHARACTERS.lock() {
-                for item in characters {
-                    chars_cache.entry(item.name).or_insert(item.id);
+        if let Some(items) = result.characters {
+            if let Ok(mut map) = CHARACTERS.lock() {
+                for item in items {
+                    map.entry(item.name).or_insert(item.id);
+                }
+            }
+        }
+        if let Some(items) = result.corporations {
+            if let Ok(mut map) = CORPORATIONS.lock() {
+                for item in items {
+                    map.entry(item.name).or_insert(item.id);
+                }
+            }
+        }
+        if let Some(items) = result.alliances {
+            if let Ok(mut map) = ALLIANCES.lock() {
+                for item in items {
+                    map.entry(item.name).or_insert(item.id);
                 }
             }
         }
@@ -123,9 +149,7 @@ pub struct CorporationProps {
 
 impl CorporationProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(name, SearchCategory::Corporation)
-            .await?
-            .get_corporation_id()?;
+        let id = NameProvider::get_id(name, SearchCategory::Corporation).await?;
         Self::from(id).await
     }
 
@@ -170,9 +194,7 @@ pub struct AllianceProps {
 }
 impl AllianceProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = SearchResult::from(name, SearchCategory::Alliance)
-            .await?
-            .get_alliance_id()?;
+        let id = NameProvider::get_id(name, SearchCategory::Alliance).await?;
         Self::from(id).await
     }
 
@@ -476,24 +498,40 @@ impl WhoProps {
         });
 
         Ok(Self { characters })
-
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn name_provider_get_id() -> Result<(), String> {
-        let name = String::from("Seb Odessa");
-        let id = NameProvider::get_id(name, SearchCategory::Character)
+    async fn name_provider_get_char_id() -> Result<(), String> {
+        let id = NameProvider::get_id(String::from("Seb Odessa"), SearchCategory::Character)
             .await
             .map_err(|e| format!("{e}"))?;
 
-
         assert_eq!(2114350216, id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn name_provider_get_corp_id() -> Result<(), String> {
+        let id = NameProvider::get_id(String::from("SO Corporation"), SearchCategory::Corporation)
+            .await
+            .map_err(|e| format!("{e}"))?;
+
+        assert_eq!(98573194, id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn name_provider_get_alli_id() -> Result<(), String> {
+        let id = NameProvider::get_id(String::from("Train Wreck."), SearchCategory::Alliance)
+            .await
+            .map_err(|e| format!("{e}"))?;
+
+        assert_eq!(99011258, id);
         Ok(())
     }
 }
