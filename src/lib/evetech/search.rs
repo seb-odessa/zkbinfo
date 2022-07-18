@@ -65,7 +65,7 @@ pub struct SearchResult {
     pub stations: Option<Vec<EveItem>>,
 }
 impl SearchResult {
-    pub async fn from(name: String, _category: SearchCategory) -> anyhow::Result<Self> {
+    pub async fn from(name: String) -> anyhow::Result<Self> {
         let url = format!("{EVE_TECH_ROOT}/universe/ids/?{EVE_TECH_SERVER}");
         info!("{url}");
         let query = vec!(name.clone());
@@ -79,16 +79,6 @@ impl SearchResult {
             .map_err(|e| anyhow!(e))
 
     }
-
-    pub fn get_character_id(&self) -> anyhow::Result<i32> {
-        self.characters
-            .iter()
-            .next()
-            .and_then(|items| items.iter().next())
-            .and_then(|item| Some(item.id))
-            .ok_or(anyhow!("Character was not found"))
-    }
-
 }
 
 #[cfg(test)]
@@ -96,32 +86,50 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn from() -> Result<(), String> {
+    async fn search_character() -> Result<(), String> {
         let name = String::from("Seb Odessa");
-        let search = SearchResult::from(name, SearchCategory::Character)
+        let search = SearchResult::from(name)
             .await
             .map_err(|e| format!("{e}"))?;
-        let items = search
-            .characters
-            .ok_or("The SearchResult::charater is None")?;
+        let items = search.characters
+            .ok_or("The SearchResult::charaters is None")?;
         let item = items
             .into_iter()
             .next()
-            .ok_or("The SearchResult::charater is empty")?;
+            .ok_or("The SearchResult::charaters is empty")?;
         assert_eq!(2114350216, item.id);
         Ok(())
     }
 
     #[tokio::test]
-    async fn get_character_id() -> Result<(), String> {
-        let name = String::from("Seb Odessa");
-        let search = SearchResult::from(name, SearchCategory::Character)
+    async fn search_corporation() -> Result<(), String> {
+        let name = String::from("SO Corporation");
+        let search = SearchResult::from(name)
             .await
             .map_err(|e| format!("{e}"))?;
+        let items = search.corporations
+            .ok_or("The SearchResult::corporations is None")?;
+        let item = items
+            .into_iter()
+            .next()
+            .ok_or("The SearchResult::corporations is empty")?;
+        assert_eq!(98573194, item.id);
+        Ok(())
+    }
 
-        let id = search.get_character_id().map_err(|e| format!("{e}"))?;
-
-        assert_eq!(2114350216, id);
+    #[tokio::test]
+    async fn search_alliance() -> Result<(), String> {
+        let name = String::from("Train Wreck.");
+        let search = SearchResult::from(name)
+            .await
+            .map_err(|e| format!("{e}"))?;
+        let items = search.alliances
+            .ok_or("The SearchResult::alliances is None")?;
+        let item = items
+            .into_iter()
+            .next()
+            .ok_or("The SearchResult::alliances is empty")?;
+        assert_eq!(99011258, item.id);
         Ok(())
     }
 }

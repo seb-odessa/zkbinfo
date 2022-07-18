@@ -270,37 +270,18 @@ impl WhoProps {
     }
 
     pub async fn from(data: WhoFormData) -> anyhow::Result<Self> {
-        // let gets_tasks = data
-        //     .names
-        //     .split("\r\n")
-        //     .map(|name| String::from(name))
-        //     .filter(|name| !name.is_empty())
-        //     .map(|name| SearchResult::from(name, SearchCategory::Character))
-        //     .collect::<Vec<_>>();
-
-        // let ids = join_all(gets_tasks)
-        //     .await
-        //     .into_iter()
-        //     .filter(|search_result| search_result.is_ok())
-        //     .map(|search_result| search_result.unwrap().get_character_id())
-        //     .map(|maybe_id| maybe_id.unwrap_or_default())
-        //     .filter(|id| *id != 0)
-        //     .collect::<Vec<i32>>();
 
         let get_ids_tasks = data.names.split("\r\n")
                     .map(|name| String::from(name))
                     .filter(|name| !name.is_empty())
-                    .map(|name| IdProvider::get(name, SearchCategory::Character))
-                    .collect::<Vec<_>>();
-
-        let ids_results: Vec<_> = join_all(get_ids_tasks.into_iter()).await;
+                    .map(|name| IdProvider::get(name, SearchCategory::Character));
+        let ids_results: Vec<_> = join_all(get_ids_tasks).await;
         let ids: Vec<i32> = ids_results.into_iter()
                                 .map(|id| id.unwrap_or_default())
                                 .filter(|id| 0 != *id)
                                 .collect();
 
         let get_chars_tasks = join_all(ids.iter().map(|id| Character::from(*id))).await;
-
 
         let get_activity_tasks = join_all(ids.iter().map(|id| Self::activity(*id))).await;
         let char_map = ids

@@ -67,7 +67,7 @@ impl IdProvider {
         if let Some(id) = Self::find_id(name.clone(), category.clone()) {
             return Ok(id);
         }
-        let sr = SearchResult::from(name.clone(), category.clone()).await?;
+        let sr = SearchResult::from(name.clone()).await?;
         Self::update(sr)?;
         Self::find_id(name.clone(), category)
             .ok_or(format!("Can't find id for {name}"))
