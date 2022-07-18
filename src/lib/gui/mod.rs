@@ -5,6 +5,8 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
+mod providers;
+
 use crate::evetech::Alliance;
 use crate::evetech::AllianceIcon;
 use crate::evetech::Character;
@@ -16,81 +18,9 @@ use crate::evetech::Names;
 use crate::evetech::SearchCategory;
 use crate::evetech::SearchResult;
 
-use lazy_static::lazy_static;
-
 use std::collections::HashMap;
-use std::sync::Mutex;
 
-lazy_static! {
-    static ref CHARACTERS: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
-    static ref CORPORATIONS: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
-    static ref ALLIANCES: Mutex<HashMap<String, i32>> = Mutex::new(HashMap::new());
-}
-
-struct NameProvider;
-
-impl NameProvider {
-    fn find_id(name: String, category: SearchCategory) -> Option<i32> {
-        match category {
-            SearchCategory::Character => {
-                if let Ok(map) = CHARACTERS.lock() {
-                    return map.get(&name).and_then(|id| Some(*id));
-                }
-            }
-            SearchCategory::Corporation => {
-                if let Ok(map) = CORPORATIONS.lock() {
-                    return map.get(&name).and_then(|id| Some(*id));
-                }
-            }
-            SearchCategory::Alliance => {
-                if let Ok(map) = ALLIANCES.lock() {
-                    return map.get(&name).and_then(|id| Some(*id));
-                }
-            }
-            _ => {
-                return None;
-            }
-        }
-        return None;
-    }
-
-    fn update(result: SearchResult) -> anyhow::Result<()> {
-        if let Some(items) = result.characters {
-            if let Ok(mut map) = CHARACTERS.lock() {
-                for item in items {
-                    map.entry(item.name).or_insert(item.id);
-                }
-            }
-        }
-        if let Some(items) = result.corporations {
-            if let Ok(mut map) = CORPORATIONS.lock() {
-                for item in items {
-                    map.entry(item.name).or_insert(item.id);
-                }
-            }
-        }
-        if let Some(items) = result.alliances {
-            if let Ok(mut map) = ALLIANCES.lock() {
-                for item in items {
-                    map.entry(item.name).or_insert(item.id);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn get_id(name: String, category: SearchCategory) -> anyhow::Result<i32> {
-        if let Some(id) = Self::find_id(name.clone(), category.clone()) {
-            return Ok(id);
-        }
-        let sr = SearchResult::from(name.clone(), category.clone()).await?;
-        Self::update(sr)?;
-        Self::find_id(name.clone(), category)
-            .ok_or(format!("Can't find id for {name}"))
-            .map_err(|e| anyhow!(e))
-    }
-}
+use providers::IdProvider;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterProps {
@@ -108,7 +38,7 @@ pub struct CharacterProps {
 
 impl CharacterProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = NameProvider::get_id(name, SearchCategory::Character).await?;
+        let id = IdProvider::get(name, SearchCategory::Character).await?;
         Self::from(id).await
     }
     pub async fn from(id: i32) -> anyhow::Result<Self> {
@@ -149,7 +79,7 @@ pub struct CorporationProps {
 
 impl CorporationProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = NameProvider::get_id(name, SearchCategory::Corporation).await?;
+        let id = IdProvider::get(name, SearchCategory::Corporation).await?;
         Self::from(id).await
     }
 
@@ -194,7 +124,7 @@ pub struct AllianceProps {
 }
 impl AllianceProps {
     pub async fn named(name: String) -> anyhow::Result<Self> {
-        let id = NameProvider::get_id(name, SearchCategory::Alliance).await?;
+        let id = IdProvider::get(name, SearchCategory::Alliance).await?;
         Self::from(id).await
     }
 
@@ -340,24 +270,38 @@ impl WhoProps {
     }
 
     pub async fn from(data: WhoFormData) -> anyhow::Result<Self> {
-        let get_ids_tasks = data
-            .names
-            .split("\r\n")
-            .map(|name| String::from(name))
-            .filter(|name| !name.is_empty())
-            .map(|name| SearchResult::from(name, SearchCategory::Character))
-            .collect::<Vec<_>>();
+        // let gets_tasks = data
+        //     .names
+        //     .split("\r\n")
+        //     .map(|name| String::from(name))
+        //     .filter(|name| !name.is_empty())
+        //     .map(|name| SearchResult::from(name, SearchCategory::Character))
+        //     .collect::<Vec<_>>();
 
-        let ids = join_all(get_ids_tasks)
-            .await
-            .into_iter()
-            .filter(|search_result| search_result.is_ok())
-            .map(|search_result| search_result.unwrap().get_character_id())
-            .map(|maybe_id| maybe_id.unwrap_or_default())
-            .filter(|id| *id != 0)
-            .collect::<Vec<i32>>();
+        // let ids = join_all(gets_tasks)
+        //     .await
+        //     .into_iter()
+        //     .filter(|search_result| search_result.is_ok())
+        //     .map(|search_result| search_result.unwrap().get_character_id())
+        //     .map(|maybe_id| maybe_id.unwrap_or_default())
+        //     .filter(|id| *id != 0)
+        //     .collect::<Vec<i32>>();
+
+        let get_ids_tasks = data.names.split("\r\n")
+                    .map(|name| String::from(name))
+                    .filter(|name| !name.is_empty())
+                    .map(|name| IdProvider::get(name, SearchCategory::Character))
+                    .collect::<Vec<_>>();
+
+        let ids_results: Vec<_> = join_all(get_ids_tasks.into_iter()).await;
+        let ids: Vec<i32> = ids_results.into_iter()
+                                .map(|id| id.unwrap_or_default())
+                                .filter(|id| 0 != *id)
+                                .collect();
 
         let get_chars_tasks = join_all(ids.iter().map(|id| Character::from(*id))).await;
+
+
         let get_activity_tasks = join_all(ids.iter().map(|id| Self::activity(*id))).await;
         let char_map = ids
             .iter()
@@ -498,40 +442,5 @@ impl WhoProps {
         });
 
         Ok(Self { characters })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn name_provider_get_char_id() -> Result<(), String> {
-        let id = NameProvider::get_id(String::from("Seb Odessa"), SearchCategory::Character)
-            .await
-            .map_err(|e| format!("{e}"))?;
-
-        assert_eq!(2114350216, id);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn name_provider_get_corp_id() -> Result<(), String> {
-        let id = NameProvider::get_id(String::from("SO Corporation"), SearchCategory::Corporation)
-            .await
-            .map_err(|e| format!("{e}"))?;
-
-        assert_eq!(98573194, id);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn name_provider_get_alli_id() -> Result<(), String> {
-        let id = NameProvider::get_id(String::from("Train Wreck."), SearchCategory::Alliance)
-            .await
-            .map_err(|e| format!("{e}"))?;
-
-        assert_eq!(99011258, id);
-        Ok(())
     }
 }
