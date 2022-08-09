@@ -8,6 +8,10 @@ p {
     margin-block: auto;
 }
 
+a {
+    color: rgb(250, 183, 216);
+}
+
 table,
 td,
 th {
