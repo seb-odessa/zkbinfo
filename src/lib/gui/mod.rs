@@ -193,7 +193,7 @@ pub struct LostProps {
 impl LostProps {
     pub async fn from(id: i32, ship_id: i32, category: SearchCategory) -> anyhow::Result<Self> {
         let category_path = SearchCategory::category(&category);
-        let url = format!("http://zkbinfo:8080/api/{category_path}/{id}/lost/{ship_id}/");
+        let url = format!("http://zkb-who.info:8080/api/{category_path}/{id}/lost/{ship_id}/");
         info!("{url}");
         let killmails = reqwest::get(&url)
             .await?
@@ -260,7 +260,7 @@ pub struct WhoProps {
 }
 impl WhoProps {
     async fn activity(id: i32) -> anyhow::Result<Activity> {
-        let url = format!("http://zkbinfo:8080/api/character/activity/{id}/");
+        let url = format!("http://zkb-who.info:8080/api/character/activity/{id}/");
         info!("{url}");
         reqwest::get(&url)
             .await?
@@ -270,16 +270,18 @@ impl WhoProps {
     }
 
     pub async fn from(data: WhoFormData) -> anyhow::Result<Self> {
-
-        let get_ids_tasks = data.names.split("\r\n")
-                    .map(|name| String::from(name))
-                    .filter(|name| !name.is_empty())
-                    .map(|name| IdProvider::get(name, SearchCategory::Character));
+        let get_ids_tasks = data
+            .names
+            .split("\r\n")
+            .map(|name| String::from(name))
+            .filter(|name| !name.is_empty())
+            .map(|name| IdProvider::get(name, SearchCategory::Character));
         let ids_results: Vec<_> = join_all(get_ids_tasks).await;
-        let ids: Vec<i32> = ids_results.into_iter()
-                                .map(|id| id.unwrap_or_default())
-                                .filter(|id| 0 != *id)
-                                .collect();
+        let ids: Vec<i32> = ids_results
+            .into_iter()
+            .map(|id| id.unwrap_or_default())
+            .filter(|id| 0 != *id)
+            .collect();
 
         let get_chars_tasks = join_all(ids.iter().map(|id| Character::from(*id))).await;
 

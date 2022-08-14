@@ -17,7 +17,8 @@
         <div class="info">
             <div id="corporation">
                 Corporation:
-                <a href="/gui/corporation/{{corporation_name}}/">{{corporation_name}} [{{corporation_ticker}}] ({{corporation_member_count}})</a>
+                <a href="/gui/corporation/{{corporation_name}}/">{{corporation_name}} [{{corporation_ticker}}]
+                    ({{corporation_member_count}})</a>
                 <a href="{{{corporation_url}}}">homepage</a>
                 <a href="https://evewho.com/corporation/{{corporation_id}}">evewho</a>
                 <a href="https://zkillboard.com/corporation/{{corporation_id}}/">zkillboard.com</a>
@@ -73,7 +74,7 @@
         <div id="losses_head" div style="display: inline">...</div>
         <div id="losses" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/activity/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/activity/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(activities => {
                     const wins_prefix = "win";
@@ -152,7 +153,7 @@
         <div id="friendly_corps" div style="display: inline">...</div>
         <div id="friendly_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/friends/corp/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/friends/corp/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -162,7 +163,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/corporation/friends/alli/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/friends/alli/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -178,7 +179,7 @@
         <div id="enemy_corps" div style="display: inline">...</div>
         <div id="enemy_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/enemies/corp/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/enemies/corp/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     const map = sort_by_count(enemies, 6);
@@ -187,7 +188,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/corporation/enemies/alli/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/enemies/alli/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     let map = sort_by_count(enemies, 6);
@@ -198,11 +199,11 @@
         </script>
     </div>
     <div class="prime_time">
-        <br/>
+        <br />
         <h5>{{corporation_name}}'s prime time:</h5>
         <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
         <script>
-            fetch("http://zkbinfo:8080/api/corporation/activity/hourly/{{corporation_id}}/")
+            fetch("http://zkb-who.info:8080/api/corporation/activity/hourly/{{corporation_id}}/")
                 .then(response => response.json())
                 .then(hourly => {
                     draw_prime_time(hourly);

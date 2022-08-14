@@ -80,7 +80,7 @@
         <div id="losses_head" div style="display: inline">...</div>
         <div id="losses" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/activity/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/activity/{{character_id}}/")
                 .then(response => response.json())
                 .then(activities => {
                     const wins_prefix = "win";
@@ -160,7 +160,7 @@
         <div id="friendly_corps" div style="display: inline">...</div>
         <div id="friendly_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/friends/char/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/friends/char/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -169,7 +169,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/friends/corp/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/friends/corp/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -179,7 +179,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/friends/alli/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/friends/alli/{{character_id}}/")
                 .then(response => response.json())
                 .then(friends => {
                     let map = sort_by_count(friends);
@@ -196,7 +196,7 @@
         <div id="enemy_corps" div style="display: inline">...</div>
         <div id="enemy_allis" div style="display: inline">...</div>
         <script>
-            fetch("http://zkbinfo:8080/api/character/enemies/char/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/enemies/char/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     let map = sort_by_count(enemies);
@@ -205,7 +205,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/enemies/corp/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/enemies/corp/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
                     const map = sort_by_count(enemies, 6);
@@ -214,7 +214,7 @@
                 })
                 .catch((err) => console.log("Can't access: " + err));
 
-            fetch("http://zkbinfo:8080/api/character/enemies/alli/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/enemies/alli/{{character_id}}/")
                 .then(response => response.json())
                 .then(enemies => {
 
@@ -229,7 +229,7 @@
         <h5>{{character_name}}'s prime time:</h5>
         <canvas id="prime_time" width="800" height="200">Your browser does not support the canvas element.</canvas>
         <script>
-            fetch("http://zkbinfo:8080/api/character/activity/hourly/{{character_id}}/")
+            fetch("http://zkb-who.info:8080/api/character/activity/hourly/{{character_id}}/")
                 .then(response => response.json())
                 .then(hourly => draw_prime_time(hourly));
         </script>
