@@ -1,21 +1,19 @@
-
 use actix_files::Files;
 use actix_files::NamedFile;
-use actix_web::{get, post, web, App, Responder, HttpResponse, HttpServer};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use anyhow::anyhow;
 
 use handlebars::Handlebars;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-
+use lib::evetech::SearchCategory;
+use lib::gui::AllianceProps;
 use lib::gui::CharacterProps;
 use lib::gui::CorporationProps;
-use lib::gui::AllianceProps;
 use lib::gui::LostProps;
 use lib::gui::WhoFormData;
 use lib::gui::WhoProps;
-use lib::evetech::SearchCategory;
 
 use std::env;
 
@@ -48,6 +46,7 @@ async fn main() -> anyhow::Result<()> {
             .service(report_by_id)
             .service(lost_ships)
     })
+    .workers(6)
     .bind((host.as_str(), port))?
     .run()
     .await
@@ -65,17 +64,15 @@ async fn who(ctx: Context<'_>) -> HttpResponse {
     HttpResponse::Ok().body(body)
 }
 
-
 #[post("/gui/who/report/")]
 async fn who_report(ctx: Context<'_>, query: web::Form<WhoFormData>) -> HttpResponse {
     info!("{:?}", query);
     let body = match WhoProps::from(query.into_inner()).await {
-            Ok(prop) => wrapper(ctx, "report", &prop),
-            Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
-        };
+        Ok(prop) => wrapper(ctx, "report", &prop),
+        Err(err) => wrapper(ctx, "error", &Error::from(format!("{err}"))),
+    };
     HttpResponse::Ok().body(body)
 }
-
 
 #[get("/gui/{target}/{name}/")]
 async fn report(ctx: Context<'_>, path: web::Path<(String, String)>) -> HttpResponse {

@@ -167,7 +167,7 @@ async fn main() -> anyhow::Result<()> {
             .service(web::scope("/killmail").route("/save", web::post().to(api::save)))
             .wrap(Logger::default())
     })
-    .workers(3)
+    .workers(6)
     .bind((host.as_str(), port))?
     .run()
     .await
