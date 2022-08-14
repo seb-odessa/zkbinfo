@@ -10,18 +10,18 @@ And then use next links:
 
 - Perform analysis against local or any list of character names with /r/n delimiter
 
-   http://zkbinfo:8088/gui/who/
+   http://zkb-who.info:8088/gui/who/
 
 - Get information abount character
 
-   http://zkbinfo:8088/gui/character/Seb Odessa/ (http://zkbinfo:8088/gui/character/id/2114350216/)
+   http://zkb-who.info:8088/gui/character/Seb Odessa/ (http://zkb-who.info:8088/gui/character/id/2114350216/)
 
 - Get information abount corporation
-http://zkbinfo:8088/gui/corporation/SO%20Corporation/ (http://zkbinfo:8088/gui/corporation/id/98573194/)
+http://zkb-who.info:8088/gui/corporation/SO%20Corporation/ (http://zkb-who.info:8088/gui/corporation/id/98573194/)
 
 - Get information abount alliance
 
-http://zkbinfo:8088/gui/alliance/Train%20Wreck./ (http://zkbinfo:8088/gui/alliance/id/99011258/)
+http://zkb-who.info:8088/gui/alliance/Train%20Wreck./ (http://zkb-who.info:8088/gui/alliance/id/99011258/)
 
 
 
