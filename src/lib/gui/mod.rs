@@ -193,7 +193,7 @@ pub struct LostProps {
 impl LostProps {
     pub async fn from(id: i32, ship_id: i32, category: SearchCategory) -> anyhow::Result<Self> {
         let category_path = SearchCategory::category(&category);
-        let url = format!("http://zkb-who.info:8080/api/{category_path}/{id}/lost/{ship_id}/");
+        let url = format!("http://185.195.25.132:8080/api/{category_path}/{id}/lost/{ship_id}/");
         info!("{url}");
         let killmails = reqwest::get(&url)
             .await?
@@ -260,7 +260,7 @@ pub struct WhoProps {
 }
 impl WhoProps {
     async fn activity(id: i32) -> anyhow::Result<Activity> {
-        let url = format!("http://zkb-who.info:8080/api/character/activity/{id}/");
+        let url = format!("http://185.195.25.132:8080/api/character/activity/{id}/");
         info!("{url}");
         reqwest::get(&url)
             .await?
