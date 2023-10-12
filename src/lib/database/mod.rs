@@ -162,7 +162,11 @@ pub fn insert(conn: &Connection, killmail: evetech::Killmail) -> anyhow::Result<
 
 pub fn select_ids_by_date(conn: &Connection, date: &NaiveDate) -> anyhow::Result<Vec<i32>> {
     let left = date.format("%Y-%m-%d").to_string();
-    let right = date.succ().format("%Y-%m-%d").to_string();
+    let right = date
+        .succ_opt()
+        .expect("Correct date expected")
+        .format("%Y-%m-%d")
+        .to_string();
     let sql = format!(
         "SELECT killmail_id FROM killmails WHERE killmail_time BETWEEN '{left}' AND '{right}';"
     );
